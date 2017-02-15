@@ -57,9 +57,9 @@ namespace GBU_Server_Monitor
 
         private void Search_button_search_Click(object sender, EventArgs e)
         {
-            DataTable result = new DataTable();
+            //DataTable result = new DataTable();
 
-            //DataTable DBresult = new DataTable();
+            DataTable DBresult = new DataTable();
 
             _plateList.Clear();
             _plateListIdx = 0;
@@ -67,18 +67,31 @@ namespace GBU_Server_Monitor
             Search_listView1.Items.Clear();
             
             // result from DB
-            //dbManager.SearchPlate(search_textBox_search.Text, ref DBresult);
+            dbManager.SearchPlate(search_textBox_search.Text, ref DBresult);
             // result from local file
-            dbManager.SearchPlateForFile(comboBox_Channel.SelectedIndex - 1 ,search_textBox_search.Text, ref result);
+            //dbManager.SearchPlateForFile(comboBox_Channel.SelectedIndex - 1 ,search_textBox_search.Text, ref result);
 
-            // read DB result
-            //foreach (DataRow dr in DBresult.Rows)
-            //{
-            //   Console.WriteLine(Convert.ToString(dr["CARL_YMDHNS"]) + " , " + Convert.ToString(dr["CARL_CARNO"]).ToString() + " , " + Convert.ToString(dr["CARL_OK"]) + " , " + Convert.ToString(dr["CARL_CID"]));
-            //}
+            // read DB result CAMID, ANPRDATE, ANPRTIME, PLATE, IMAGEPATH
+            foreach (DataRow dr in DBresult.Rows)
+            {
+               DateTime myDateTime = DateTime.ParseExact(dr["ANPRDATE"].ToString().Substring(0, 10) + " " + dr["ANPRTIME"].ToString(), "yyyy-MM-dd HH:mm:ss", System.Globalization.CultureInfo.InvariantCulture);
+               string[] itemStr = { Convert.ToString(dr["CAMID"]), myDateTime.ToString(), Convert.ToString(dr["PLATE"]) };
+               ListViewItem item = new ListViewItem(itemStr);
+               Search_listView1.Items.Add(item);
+
+               PLATE_FOUND plate = new PLATE_FOUND();
+               plate.cam = Convert.ToInt32(dr["CAMID"]);
+               plate.dateTime = myDateTime;
+               plate.id = _plateListIdx;
+               plate.plateStr = Convert.ToString(dr["PLATE"]);
+               plate.imageFilePath = Convert.ToString(dr["IMAGEPATH"]);
+
+               _plateList.Add(plate);
+               _plateListIdx++;
+            }
 
             // read local file result and add list
-            foreach (DataRow dr in result.Rows)
+            /*foreach (DataRow dr in result.Rows)
             {
                 string[] itemStr = { Convert.ToString(dr["camId"]), Convert.ToDateTime(dr["dateTime"]).ToString(), Convert.ToString(dr["plate"]) };
                 ListViewItem item = new ListViewItem(itemStr);
@@ -95,7 +108,7 @@ namespace GBU_Server_Monitor
 
                 _plateList.Add(plate);
                 _plateListIdx++;
-            }
+            }*/
 
         }
 

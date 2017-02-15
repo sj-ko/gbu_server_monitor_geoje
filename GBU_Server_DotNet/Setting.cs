@@ -93,7 +93,7 @@ namespace GBU_Server_Monitor
 
         public Setting()
         {
-            _savePath = @"d:\anprtest\";
+            _savePath = @"c:\anprtest\";
             //_serverPath = @"C:\GBUANPR\Server";
             //_configPath = @"C:\GBUANPR\Config";
             _serverPath = @"d:\anpr_161201_test\";
@@ -103,7 +103,7 @@ namespace GBU_Server_Monitor
 
         public Setting(int id)
         {
-            _savePath = @"d:\anprtest\";
+            _savePath = @"c:\anprtest\";
             //_serverPath = @"C:\GBUANPR\Server";
             //_configPath = @"C:\GBUANPR\Config";
             _serverPath = @"d:\anpr_161201_test\";
@@ -116,7 +116,7 @@ namespace GBU_Server_Monitor
             //_savePath = @"c:\anprtest";
             //_serverPath = @"C:\Dev\GBU_Server_DotNet_Gaenari_Rev1\GBU_Server_DotNet\bin\x86\Debug";
             //_configPath = @"C:\Dev\gaenari_cfg\test2";
-            _savePath = @"d:\anprtest\";
+            _savePath = @"c:\anprtest\";
             //_serverPath = @"C:\GBUANPR\Server";
             //_configPath = @"C:\GBUANPR\Config";
             _serverPath = @"d:\anpr_161201_test\";

@@ -30,9 +30,12 @@ namespace GBU_Server_Monitor
         private System.Threading.Timer timer;
         private AutoResetEvent timerEvent;
 
-        private FileSystemWatcher[] watcher = new FileSystemWatcher[NUM_OF_CAM];
+        //private FileSystemWatcher[] watcher = new FileSystemWatcher[NUM_OF_CAM];
 
         private bool playStatus = false;
+
+        private const string AXXON_HTTP_URL_1 = "http://localhost:8088/gbu/live/media/snapshot/KSJCJ-NOTE-PC/DeviceIpint.";
+        private const string AXXON_HTTP_URL_2 = "/SourceEndpoint.video:0:0";
 
         public class PLATE_FOUND
         {
@@ -74,6 +77,8 @@ namespace GBU_Server_Monitor
         //public string savepath = @"D:\anprtest";
 
         private TreeNode _selectedNode;
+
+        private ImageImpoter[] imageImporter = new ImageImpoter[NUM_OF_CAM];
 
         public MainForm()
         {
@@ -139,6 +144,18 @@ namespace GBU_Server_Monitor
                 timer = null;
             }
 
+            for (int i = 0; i < _anprCamList.Count; i++)
+            {
+                if (imageImporter[i] != null)
+                {
+                    imageImporter[i].ANPRDetected -= MainForm_ANPRDetected;
+                    imageImporter[i].Stop();
+                    imageImporter[i] = null;
+                }
+            }
+
+            /*
+
             for (int i = 0; i < NUM_OF_CAM; i++)
             {
                 if (watcher[i] != null)
@@ -147,7 +164,7 @@ namespace GBU_Server_Monitor
                     watcher[i].Dispose();
                     watcher[i] = null;
                 }
-            }
+            }*/
 
             //_plateListIdx = 0;
             //_plateList.Clear();
@@ -159,7 +176,7 @@ namespace GBU_Server_Monitor
                 {
                     foreach (ANPRCam cam in _anprCamList)
                     {
-                        if ((DateTime.Now.Ticks - cam.recognizedTime) / 10000f > 3000f && cam.recognizedTime > 0)
+                        if ((DateTime.Now.Ticks - cam.recognizedTime) / 10000f > 3000f && cam.recognizedTime > 0) // 3 sec
                         {
                             cam.markersOverlay.Markers.Clear();
                             GMarkerGoogle marker = new GMarkerGoogle(cam.position, GMarkerGoogleType.green);
@@ -242,7 +259,13 @@ namespace GBU_Server_Monitor
         {
             if (playStatus == true)
             {
-                System.Diagnostics.Process.Start(@"taskkill", @"/f /im GBU_Server_DotNet*");
+                // Rev 1
+                //System.Diagnostics.Process.Start(@"taskkill", @"/f /im GBU_Server_DotNet*");
+                // ---
+                // Rev 2 - Axxon Module
+                
+                // ---
+
                 Stop();
 
                 button_PlayStop.Text = "연결";
@@ -254,28 +277,44 @@ namespace GBU_Server_Monitor
             }
             else
             {
+                // Rev 1 
+                /*
                 for (int i = 0; i < _anprCamList.Count; i++)
                 {
                     System.Diagnostics.Process.Start(setting.serverPath + @"\GBU_Server_DotNet.exe", setting.configPath + @"\ch" + _anprCamList[i].camid + ".cfg --autostart --enlarge");
                 }
+                */
+                // ---
+                // Rev 2 - Axxon Module
+                for (int i = 0; i < _anprCamList.Count; i++)
+                {
+                    string axxonUrl = "http://192.168.0.16/Streaming/channels/1/picture"; // AXXON_HTTP_URL_1 + _anprCamList[i].camid + AXXON_HTTP_URL_2;
+                    imageImporter[i] = new ImageImpoter();
+                    imageImporter[i].ANPRDetected += MainForm_ANPRDetected;
+                    imageImporter[i].SavePath = setting.savePath;
+                    imageImporter[i].InitCamera(_anprCamList[i].camid, axxonUrl, 500);
+                    imageImporter[i].Play();
+                }
+
+                // ---
 
                 timerEvent = new AutoResetEvent(true);
                 timer = new System.Threading.Timer(MediaTimerCallBack, null, 100, 200);
 
 
-                for (int i = 0; i < NUM_OF_CAM; i++)
+                /*for (int i = 0; i < _anprCamList.Count; i++) // NUM_OF_CAM -> to be changed _anprCamList.Count
                 {
                     watcher[i] = new FileSystemWatcher();
-                    string path = setting.savePath + "\\ch" + i;
+                    string path = setting.savePath + "\\ch" + _anprCamList[i].camid;
                     if (Directory.Exists(path))
                     {
                         watcher[i].Path = path;
                         watcher[i].NotifyFilter = NotifyFilters.LastWrite | NotifyFilters.FileName | NotifyFilters.DirectoryName;
-                        watcher[i].Filter = "anprresult.txt";
+                        watcher[i].Filter = "*.jpg";
                         watcher[i].Changed += new FileSystemEventHandler(OnChangedANPRPath);
                         watcher[i].EnableRaisingEvents = true;
                     }
-                }
+                }*/
 
                 button_PlayStop.Text = "끊기";
 
@@ -284,6 +323,45 @@ namespace GBU_Server_Monitor
 
                 playStatus = true;
             }
+        }
+
+        void MainForm_ANPRDetected(int channel, DateTime dateTime, string plateStr, string imagePath)
+        {
+            this.BeginInvoke(new Action(() =>
+            {
+                //pictureBox_result.ImageLocation = logresults[3];
+                //textBox_result.Text = "카메라 " + logresults[0] + " : " + findANPRCamName(Convert.ToInt32(logresults[0], 10)) + " 차량번호 : " + logresults[1];
+
+                DateTime time = new DateTime();
+                string[] itemStr = { channel.ToString(), dateTime.ToString(), plateStr };
+                ListViewItem item = new ListViewItem(itemStr);
+                listView_result.Items.Add(item);
+                listView_result.Items[listView_result.Items.Count - 1].EnsureVisible();
+
+                PLATE_FOUND found = new PLATE_FOUND();
+
+                found.no = _plateListIdx;
+                found.cam = channel;
+                found.dateTime = dateTime;
+                found.imageFilePath = imagePath;
+                found.plateStr = plateStr;
+
+                _plateList.Add(found);
+                _plateListIdx++;
+
+                foreach (ANPRCam cam in _anprCamList)
+                {
+                    int id = channel;
+                    if (cam.camid == id)
+                    {
+                        cam.recognizedTime = DateTime.Now.Ticks;
+                        cam.position = cam.markersOverlay.Markers[0].Position;
+                        cam.markersOverlay.Markers.Clear();
+                        GMarkerGoogle marker = new GMarkerGoogle(cam.position, GMarkerGoogleType.red);
+                        cam.markersOverlay.Markers.Add(marker);
+                    }
+                }
+            }));
         }
 
         private void button_Search_Click(object sender, EventArgs e)
@@ -302,7 +380,7 @@ namespace GBU_Server_Monitor
 
         private void button_Exit_Click(object sender, EventArgs e)
         {
-            System.Diagnostics.Process.Start(@"taskkill", @"/f /im GBU_Server_DotNet*");
+            //System.Diagnostics.Process.Start(@"taskkill", @"/f /im GBU_Server_DotNet*");
             Stop();
             //gMapControl1.Dispose(); // freeze?
             Application.Exit();
