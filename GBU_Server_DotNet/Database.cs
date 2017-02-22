@@ -163,6 +163,43 @@ namespace GBU_Server_Monitor
             return 0;
         }
 
+        public int SearchPlateByDate(int ch, DateTime dateTime, ref DataTable resultTable)
+        {
+            try
+            {
+                conn.Open();
+                DataSet ds = new DataSet();
+
+                string searchDate = string.Format("{0:yyyy/MM/dd}", dateTime); // ANPRDATE
+
+#if __USE_FIREBIRD__
+                FbDataAdapter da = new FbDataAdapter("SELECT * FROM ANPRTABLE WHERE ANPRDATE like '" + searchDate + "' and CAMID like " + ch, conn);
+#else
+                MySqlDataAdapter da = new MySqlDataAdapter("SELECT * FROM anpr_test1 WHERE plate like '%" + str + "%'", conn);
+#endif
+                da.Fill(ds, "mytable");
+
+                DataTable dt = ds.Tables["mytable"];
+                foreach (DataRow dr in dt.Rows)
+                {
+#if __USE_FIREBIRD__
+                    Console.WriteLine(string.Format("Name = {0}, Desc = {1}", dr["ANPRTIME"], dr["PLATE"]));
+#else
+                    Console.WriteLine(string.Format("Name = {0}, Desc = {1}", dr["dateTime"], dr["plate"]));
+#endif
+                }
+                resultTable = dt;
+                conn.Close();
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e.ToString() + "::" + e.StackTrace);
+                conn.Close();
+            }
+
+            return 0;
+        }
+#if false
         public int SearchPlateForFile(int ch, string str, ref DataTable resultTable)
         {
             DataTable dt = new DataTable("mytable");
@@ -252,6 +289,7 @@ namespace GBU_Server_Monitor
 
             return 0;
         }
+#endif
 
         public void InsertPlateText(int camid, DateTime datetime, string plate, Image image)
         {

@@ -31,6 +31,7 @@ namespace GBU_Server_Monitor
         private Database db;
         private Thread MediaThread, ANPRThread;
         private Uri camUrl;
+        private string camUsername, camPassword;
         private int mediaThreadInterval = 100; // ms
         private bool _isMediaThreadRunning = false, _isANPRThreadRunning = false;
         private LimitedQueue<byte[]> imageList = new LimitedQueue<byte[]>(128);
@@ -64,11 +65,14 @@ namespace GBU_Server_Monitor
             StopMediaThread();
         }
 
-        public void InitCamera(int camID, string url, int interval)
+        public void InitCamera(int camID, string url, int interval, string username, string password)
         {
             camUrl = new Uri(url, UriKind.Absolute);
             mediaThreadInterval = interval;
             cameraID = camID;
+
+            camUsername = username;
+            camPassword = password;
 
             // anpr init
             initANPR();
@@ -180,11 +184,18 @@ namespace GBU_Server_Monitor
             {
                 WebClient webClient = new WebClient();
                 //webClient.OpenReadCompleted += new OpenReadCompletedEventHandler(imageDownload_openReadCompleted);
-                webClient.Credentials = new NetworkCredential("admin", "gbudata1234"); // to do : change to SecureString
+                webClient.Credentials = new NetworkCredential(camUsername, camPassword); // to do : change to SecureString
                 //webClient.OpenRead(camUrl);
 
-                byte[] imageData = webClient.DownloadData(camUrl); // get jpeg byte from http
-                imageList.Enqueue(imageData);
+                try
+                {
+                    byte[] imageData = webClient.DownloadData(camUrl); // get jpeg byte from http
+                    imageList.Enqueue(imageData);
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine("Connection error Camid " + cameraID + " to " + camUrl + "   exception : " + e.Message);
+                }
                 
                 // end of thread cycle - mediaThreadInterval
                 Thread.Sleep(mediaThreadInterval); 
@@ -218,9 +229,13 @@ namespace GBU_Server_Monitor
                                 string plateImageFilepath = _savepath + "\\ch" + cameraID;
                                 string dtStr = String.Format("{0:yyyyMMdd_HHmmss}", datetime);
                                 string plateImageFilename = plateImageFilepath + "\\CAM-" + cameraID + "_" + dtStr + "_" + plateStr + ".jpg";
-                                Console.WriteLine("Result: '{0}'", plateStr);
+                                Console.WriteLine("Result: '{0}', ch {1}", plateStr, cameraID);
 
                                 // write anpr snapshot
+                                if (!Directory.Exists(plateImageFilepath))
+                                {
+                                    Directory.CreateDirectory(plateImageFilepath);
+                                }
                                 File.WriteAllBytes(plateImageFilename, imageData);
                                 // write db
                                 db.InsertPlate(cameraID, datetime, plateStr, plateImageFilename); // db write 
@@ -232,13 +247,13 @@ namespace GBU_Server_Monitor
                             else
                             {
                                 // wrong plate
-                                Console.WriteLine("Wrong plate found");
+                                Console.WriteLine("Wrong plate found ch " + cameraID);
                             }
                         }
                         else
                         {
                             // no plate
-                            Console.WriteLine("No plate found");
+                            Console.WriteLine("No plate found ch " + cameraID);
                         }
                     }
                     catch (gxException e)

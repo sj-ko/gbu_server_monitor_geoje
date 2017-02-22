@@ -18,6 +18,7 @@ using GMap.NET;
 using GMap.NET.WindowsForms;
 using GMap.NET.WindowsForms.Markers;
 using GMap.NET.WindowsForms.ToolTips;
+using System.Runtime.Serialization.Formatters.Binary;
 
 namespace GBU_Server_Monitor
 {
@@ -46,6 +47,7 @@ namespace GBU_Server_Monitor
             public string imageFilePath;
         };
 
+        [Serializable]
         public class ANPRCam
         {
             public int camid;
@@ -53,6 +55,9 @@ namespace GBU_Server_Monitor
             //public string rtspUrl;
             //public double latitude;
             //public double longitude;
+            public string address;
+            public string username;
+            public string password;
             public TreeNode node;
             public GMapOverlay markersOverlay;
             public long recognizedTime { get; set; }
@@ -115,6 +120,8 @@ namespace GBU_Server_Monitor
             gMapControl1.CanDragMap = true;
             gMapControl1.DragButton = MouseButtons.Left;
             gMapControl1.CacheLocation = Environment.CurrentDirectory + @"\GMapCache";
+
+            loadGlobalSetting();
         }
 
         private void Btn_Disconnect_Click(object sender, EventArgs e)
@@ -266,6 +273,8 @@ namespace GBU_Server_Monitor
                 
                 // ---
 
+                button_PlayStop.Text = "끊는 중...";
+
                 Stop();
 
                 button_PlayStop.Text = "연결";
@@ -277,6 +286,7 @@ namespace GBU_Server_Monitor
             }
             else
             {
+                button_PlayStop.Text = "연결 중...";
                 // Rev 1 
                 /*
                 for (int i = 0; i < _anprCamList.Count; i++)
@@ -288,11 +298,11 @@ namespace GBU_Server_Monitor
                 // Rev 2 - Axxon Module
                 for (int i = 0; i < _anprCamList.Count; i++)
                 {
-                    string axxonUrl = "http://192.168.0.16/Streaming/channels/1/picture"; // AXXON_HTTP_URL_1 + _anprCamList[i].camid + AXXON_HTTP_URL_2;
+                    //string axxonUrl = "http://192.168.0.16/Streaming/channels/1/picture"; // AXXON_HTTP_URL_1 + _anprCamList[i].camid + AXXON_HTTP_URL_2;
                     imageImporter[i] = new ImageImpoter();
                     imageImporter[i].ANPRDetected += MainForm_ANPRDetected;
                     imageImporter[i].SavePath = setting.savePath;
-                    imageImporter[i].InitCamera(_anprCamList[i].camid, axxonUrl, 500);
+                    imageImporter[i].InitCamera(_anprCamList[i].camid, _anprCamList[i].address, 500, _anprCamList[i].username, _anprCamList[i].password);
                     imageImporter[i].Play();
                 }
 
@@ -421,12 +431,31 @@ namespace GBU_Server_Monitor
                 return;
             }
 
+            // if camid exists, replace it
+            foreach (ANPRCam existCam in _anprCamList)
+            {
+                if (existCam.camid == Convert.ToInt32(textBox_camID.Text, 10))
+                {
+                    // exist!
+                    existCam.node.Text = "카메라 " + textBox_camID.Text + " - " + textBox_name.Text;
+                    existCam.position = gMapControl1.Position;
+                    existCam.markersOverlay.Markers[0].Position = existCam.position;
+                    existCam.name = textBox_name.Text;
+                    existCam.username = textBox_camUsername.Text;
+                    existCam.password = textBox_camPassword.Text;
+                    return;
+                }
+            }
+
             TreeNode camNode = new TreeNode("카메라 " + textBox_camID.Text + " - " + textBox_name.Text, 0, 0);
             treeView1.Nodes.Add(camNode);
 
             ANPRCam newcam = new ANPRCam();
             newcam.camid = Convert.ToInt32(textBox_camID.Text, 10);
             newcam.name = textBox_name.Text;
+            newcam.address = textBox_address.Text;
+            newcam.username = textBox_camUsername.Text;
+            newcam.password = textBox_camPassword.Text;
             newcam.node = camNode;
             newcam.markersOverlay = new GMapOverlay("markers");
             gMapControl1.Overlays.Add(newcam.markersOverlay);
@@ -481,6 +510,14 @@ namespace GBU_Server_Monitor
             }
 
             gMapControl1.Position = targetCam.position;
+
+            // set values in setting UI
+            textBox_camID.Text = targetCam.camid.ToString();
+            textBox_name.Text = targetCam.name;
+            textBox_address.Text = targetCam.address;
+            textBox_camUsername.Text = targetCam.username;
+            textBox_camPassword.Text = targetCam.password;
+            //
         }
 
         private void gMapControl1_Load(object sender, EventArgs e)
@@ -550,5 +587,54 @@ namespace GBU_Server_Monitor
             statisticsWindow.ShowDialog();
         }
 
+        // save ANPRCam, Setting obj
+        private void saveGlobalSetting()
+        {
+            try
+            {
+                BinaryFormatter binFmt = new BinaryFormatter();
+                using (FileStream fs = new FileStream("setting_global.dat", FileMode.Create))
+                {
+                    binFmt.Serialize(fs, _anprCamList);
+                }
+            }
+            catch (Exception e)
+            {
+                MessageBox.Show("setting save error : " + e.Message);
+            }
+        }
+
+        // load ANPRCam, Setting obj
+        private void loadGlobalSetting()
+        {
+            if (!File.Exists("setting_global.dat"))
+            {
+                return;
+            }
+
+            try
+            {
+                BinaryFormatter binFmt = new BinaryFormatter();
+                using (FileStream rdr = new FileStream("setting_global.dat", FileMode.Open))
+                {
+                    _anprCamList = (List<ANPRCam>)binFmt.Deserialize(rdr);
+                }
+            }
+            catch (Exception e)
+            {
+                MessageBox.Show("Setting file open error : " + e.Message);
+            }
+
+            foreach (ANPRCam cam in _anprCamList)
+            {
+                treeView1.Nodes.Add(cam.node);
+                gMapControl1.Overlays.Add(cam.markersOverlay);
+            }
+        }
+
+        private void button_SaveGlobalSetting_Click(object sender, EventArgs e)
+        {
+            saveGlobalSetting();
+        }
     }
 }

@@ -75,7 +75,7 @@ namespace GBU_Server_Monitor
                 string target = comboBox_Channel.GetItemText(comboBox_Channel.Items[ch]);
                 string[] targetArr = target.Split(' ');
                 int camid = Convert.ToInt32(targetArr[0], 10);
-                dbManager.SearchPlateForFileByDate(camid, targetDateTime, ref result);
+                dbManager.SearchPlateByDate(camid, targetDateTime, ref result);
 
                 string[] itemStr = { target, Convert.ToString(result.Rows.Count) };
                 ListViewItem item = new ListViewItem(itemStr);
@@ -89,7 +89,7 @@ namespace GBU_Server_Monitor
                     string target = comboBox_Channel.GetItemText(comboBox_Channel.Items[i]);
                     string[] targetArr = target.Split(' ');
                     int camid = Convert.ToInt32(targetArr[0], 10);
-                    dbManager.SearchPlateForFileByDate(camid, targetDateTime, ref result);
+                    dbManager.SearchPlateByDate(camid, targetDateTime, ref result);
 
                     string[] itemStr = { target, Convert.ToString(result.Rows.Count) };
                     ListViewItem item = new ListViewItem(itemStr);

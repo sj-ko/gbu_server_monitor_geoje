@@ -51,6 +51,13 @@
             this.label1 = new System.Windows.Forms.Label();
             this.textBox_traceRoute = new System.Windows.Forms.TextBox();
             this.button_Statictics = new System.Windows.Forms.Button();
+            this.label2 = new System.Windows.Forms.Label();
+            this.label3 = new System.Windows.Forms.Label();
+            this.label5 = new System.Windows.Forms.Label();
+            this.textBox_address = new System.Windows.Forms.TextBox();
+            this.textBox_camUsername = new System.Windows.Forms.TextBox();
+            this.textBox_camPassword = new System.Windows.Forms.TextBox();
+            this.button_SaveGlobalSetting = new System.Windows.Forms.Button();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox21)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox_result)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).BeginInit();
@@ -146,7 +153,7 @@
             // label21
             // 
             this.label21.AutoSize = true;
-            this.label21.Location = new System.Drawing.Point(61, 782);
+            this.label21.Location = new System.Drawing.Point(61, 773);
             this.label21.Name = "label21";
             this.label21.Size = new System.Drawing.Size(56, 12);
             this.label21.TabIndex = 77;
@@ -155,7 +162,7 @@
             // label22
             // 
             this.label22.AutoSize = true;
-            this.label22.Location = new System.Drawing.Point(48, 808);
+            this.label22.Location = new System.Drawing.Point(48, 799);
             this.label22.Name = "label22";
             this.label22.Size = new System.Drawing.Size(69, 12);
             this.label22.TabIndex = 78;
@@ -163,21 +170,21 @@
             // 
             // textBox_camID
             // 
-            this.textBox_camID.Location = new System.Drawing.Point(123, 775);
+            this.textBox_camID.Location = new System.Drawing.Point(123, 766);
             this.textBox_camID.Name = "textBox_camID";
             this.textBox_camID.Size = new System.Drawing.Size(312, 21);
             this.textBox_camID.TabIndex = 79;
             // 
             // textBox_name
             // 
-            this.textBox_name.Location = new System.Drawing.Point(123, 802);
+            this.textBox_name.Location = new System.Drawing.Point(123, 793);
             this.textBox_name.Name = "textBox_name";
             this.textBox_name.Size = new System.Drawing.Size(312, 21);
             this.textBox_name.TabIndex = 80;
             // 
             // button_camAdd
             // 
-            this.button_camAdd.Location = new System.Drawing.Point(123, 839);
+            this.button_camAdd.Location = new System.Drawing.Point(123, 882);
             this.button_camAdd.Name = "button_camAdd";
             this.button_camAdd.Size = new System.Drawing.Size(107, 23);
             this.button_camAdd.TabIndex = 81;
@@ -187,7 +194,7 @@
             // 
             // button_camDel
             // 
-            this.button_camDel.Location = new System.Drawing.Point(236, 839);
+            this.button_camDel.Location = new System.Drawing.Point(236, 882);
             this.button_camDel.Name = "button_camDel";
             this.button_camDel.Size = new System.Drawing.Size(107, 23);
             this.button_camDel.TabIndex = 82;
@@ -275,7 +282,7 @@
             // 
             // button_Statictics
             // 
-            this.button_Statictics.Location = new System.Drawing.Point(403, 12);
+            this.button_Statictics.Location = new System.Drawing.Point(400, 12);
             this.button_Statictics.Name = "button_Statictics";
             this.button_Statictics.Size = new System.Drawing.Size(75, 36);
             this.button_Statictics.TabIndex = 97;
@@ -283,11 +290,76 @@
             this.button_Statictics.UseVisualStyleBackColor = true;
             this.button_Statictics.Click += new System.EventHandler(this.button_Statictics_Click);
             // 
+            // label2
+            // 
+            this.label2.AutoSize = true;
+            this.label2.Location = new System.Drawing.Point(48, 823);
+            this.label2.Name = "label2";
+            this.label2.Size = new System.Drawing.Size(69, 12);
+            this.label2.TabIndex = 98;
+            this.label2.Text = "카메라 주소";
+            // 
+            // label3
+            // 
+            this.label3.AutoSize = true;
+            this.label3.Location = new System.Drawing.Point(74, 851);
+            this.label3.Name = "label3";
+            this.label3.Size = new System.Drawing.Size(44, 12);
+            this.label3.TabIndex = 99;
+            this.label3.Text = "접속 ID";
+            // 
+            // label5
+            // 
+            this.label5.AutoSize = true;
+            this.label5.Location = new System.Drawing.Point(254, 851);
+            this.label5.Name = "label5";
+            this.label5.Size = new System.Drawing.Size(29, 12);
+            this.label5.TabIndex = 100;
+            this.label5.Text = "암호";
+            // 
+            // textBox_address
+            // 
+            this.textBox_address.Location = new System.Drawing.Point(123, 820);
+            this.textBox_address.Name = "textBox_address";
+            this.textBox_address.Size = new System.Drawing.Size(312, 21);
+            this.textBox_address.TabIndex = 101;
+            // 
+            // textBox_camUsername
+            // 
+            this.textBox_camUsername.Location = new System.Drawing.Point(123, 848);
+            this.textBox_camUsername.Name = "textBox_camUsername";
+            this.textBox_camUsername.Size = new System.Drawing.Size(100, 21);
+            this.textBox_camUsername.TabIndex = 102;
+            // 
+            // textBox_camPassword
+            // 
+            this.textBox_camPassword.Location = new System.Drawing.Point(302, 848);
+            this.textBox_camPassword.Name = "textBox_camPassword";
+            this.textBox_camPassword.Size = new System.Drawing.Size(133, 21);
+            this.textBox_camPassword.TabIndex = 103;
+            // 
+            // button_SaveGlobalSetting
+            // 
+            this.button_SaveGlobalSetting.Location = new System.Drawing.Point(508, 13);
+            this.button_SaveGlobalSetting.Name = "button_SaveGlobalSetting";
+            this.button_SaveGlobalSetting.Size = new System.Drawing.Size(76, 35);
+            this.button_SaveGlobalSetting.TabIndex = 104;
+            this.button_SaveGlobalSetting.Text = "카메라목록 저장";
+            this.button_SaveGlobalSetting.UseVisualStyleBackColor = true;
+            this.button_SaveGlobalSetting.Click += new System.EventHandler(this.button_SaveGlobalSetting_Click);
+            // 
             // MainForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(96F, 96F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Dpi;
             this.ClientSize = new System.Drawing.Size(1920, 1040);
+            this.Controls.Add(this.button_SaveGlobalSetting);
+            this.Controls.Add(this.textBox_camPassword);
+            this.Controls.Add(this.textBox_camUsername);
+            this.Controls.Add(this.textBox_address);
+            this.Controls.Add(this.label5);
+            this.Controls.Add(this.label3);
+            this.Controls.Add(this.label2);
             this.Controls.Add(this.button_Statictics);
             this.Controls.Add(this.textBox_traceRoute);
             this.Controls.Add(this.label1);
@@ -351,6 +423,13 @@
         private System.Windows.Forms.TextBox textBox_traceRoute;
         public System.Windows.Forms.ListView listView_result;
         private System.Windows.Forms.Button button_Statictics;
+        private System.Windows.Forms.Label label2;
+        private System.Windows.Forms.Label label3;
+        private System.Windows.Forms.Label label5;
+        private System.Windows.Forms.TextBox textBox_address;
+        private System.Windows.Forms.TextBox textBox_camUsername;
+        private System.Windows.Forms.TextBox textBox_camPassword;
+        private System.Windows.Forms.Button button_SaveGlobalSetting;
     }
 }
 
