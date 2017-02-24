@@ -19,6 +19,8 @@ using GMap.NET.WindowsForms;
 using GMap.NET.WindowsForms.Markers;
 using GMap.NET.WindowsForms.ToolTips;
 using System.Runtime.Serialization.Formatters.Binary;
+using System.Security.Cryptography;
+using System.Configuration;
 
 namespace GBU_Server_Monitor
 {
@@ -106,12 +108,10 @@ namespace GBU_Server_Monitor
             listView_result.GridLines = true;
 
             listView_result.Columns.Add("카메라", 50, HorizontalAlignment.Left);
-            listView_result.Columns.Add("시간", 100, HorizontalAlignment.Left);
+            listView_result.Columns.Add("시간", 200, HorizontalAlignment.Left);
             listView_result.Columns.Add("차량번호", 100, HorizontalAlignment.Left);
 
             InitCamera();
-
-            dbManager.SavePath = setting.savePath;
 
             // Initialize map:
             gMapControl1.MapProvider = GMap.NET.MapProviders.GoogleMapProvider.Instance;
@@ -138,8 +138,6 @@ namespace GBU_Server_Monitor
         private void camera_PropertyChanged(object sender, PropertyChangedEventArgs e)
         {
             //UpdateFormUIValue();
-
-            dbManager.SavePath = setting.savePath;
         }
 
         private void Stop()
@@ -272,10 +270,10 @@ namespace GBU_Server_Monitor
                 // Rev 2 - Axxon Module
                 
                 // ---
-
-                button_PlayStop.Text = "끊는 중...";
-
+                PopUp popUp = new PopUp("연결 끊는 중...");
+                popUp.Show();
                 Stop();
+                popUp.Close();
 
                 button_PlayStop.Text = "연결";
 
@@ -286,7 +284,6 @@ namespace GBU_Server_Monitor
             }
             else
             {
-                button_PlayStop.Text = "연결 중...";
                 // Rev 1 
                 /*
                 for (int i = 0; i < _anprCamList.Count; i++)
@@ -391,7 +388,10 @@ namespace GBU_Server_Monitor
         private void button_Exit_Click(object sender, EventArgs e)
         {
             //System.Diagnostics.Process.Start(@"taskkill", @"/f /im GBU_Server_DotNet*");
+            PopUp popUp = new PopUp("연결 끊는 중...");
+            popUp.Show();
             Stop();
+            popUp.Close();
             //gMapControl1.Dispose(); // freeze?
             Application.Exit();
         }
@@ -441,6 +441,7 @@ namespace GBU_Server_Monitor
                     existCam.position = gMapControl1.Position;
                     existCam.markersOverlay.Markers[0].Position = existCam.position;
                     existCam.name = textBox_name.Text;
+                    existCam.address = textBox_address.Text;
                     existCam.username = textBox_camUsername.Text;
                     existCam.password = textBox_camPassword.Text;
                     return;
@@ -590,12 +591,29 @@ namespace GBU_Server_Monitor
         // save ANPRCam, Setting obj
         private void saveGlobalSetting()
         {
+            byte[] saltBytes = new byte[] { 1, 2, 3, 4, 5, 6, 7, 8 };
+            byte[] passwordBytes = System.Text.Encoding.UTF8.GetBytes(ConfigurationManager.ConnectionStrings["aesPassword"].ConnectionString);
+            RijndaelManaged AES = new RijndaelManaged();
+            AES.KeySize = 256;
+            AES.BlockSize = 128;
+
+            var key = new Rfc2898DeriveBytes(passwordBytes, saltBytes, 1000);
+            AES.Key = key.GetBytes(AES.KeySize / 8);
+            AES.IV = key.GetBytes(AES.BlockSize / 8);
+            AES.Padding = PaddingMode.PKCS7;
+            AES.Mode = CipherMode.CBC;
+
             try
             {
                 BinaryFormatter binFmt = new BinaryFormatter();
                 using (FileStream fs = new FileStream("setting_global.dat", FileMode.Create))
                 {
-                    binFmt.Serialize(fs, _anprCamList);
+                    using (CryptoStream cs = new CryptoStream(fs, AES.CreateEncryptor(), CryptoStreamMode.Write))
+                    {
+                        binFmt.Serialize(cs, _anprCamList);
+                        cs.Close();
+                    }
+                    fs.Close();
                 }
             }
             catch (Exception e)
@@ -612,12 +630,29 @@ namespace GBU_Server_Monitor
                 return;
             }
 
+            byte[] saltBytes = new byte[] { 1, 2, 3, 4, 5, 6, 7, 8 };
+            byte[] passwordBytes = System.Text.Encoding.UTF8.GetBytes(ConfigurationManager.ConnectionStrings["aesPassword"].ConnectionString);
+            RijndaelManaged AES = new RijndaelManaged();
+            AES.KeySize = 256;
+            AES.BlockSize = 128;
+
+            var key = new Rfc2898DeriveBytes(passwordBytes, saltBytes, 1000);
+            AES.Key = key.GetBytes(AES.KeySize / 8);
+            AES.IV = key.GetBytes(AES.BlockSize / 8);
+            AES.Padding = PaddingMode.PKCS7;
+            AES.Mode = CipherMode.CBC;
+
             try
             {
                 BinaryFormatter binFmt = new BinaryFormatter();
                 using (FileStream rdr = new FileStream("setting_global.dat", FileMode.Open))
                 {
-                    _anprCamList = (List<ANPRCam>)binFmt.Deserialize(rdr);
+                    using (CryptoStream cs = new CryptoStream(rdr, AES.CreateDecryptor(), CryptoStreamMode.Read))
+                    {
+                        _anprCamList = (List<ANPRCam>)binFmt.Deserialize(cs);
+                        cs.Close();
+                    }
+                    rdr.Close();
                 }
             }
             catch (Exception e)
@@ -635,6 +670,11 @@ namespace GBU_Server_Monitor
         private void button_SaveGlobalSetting_Click(object sender, EventArgs e)
         {
             saveGlobalSetting();
+        }
+
+        private void button_Minimize_Click(object sender, EventArgs e)
+        {
+            this.WindowState = FormWindowState.Minimized;
         }
     }
 }

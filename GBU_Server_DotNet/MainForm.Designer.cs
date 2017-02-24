@@ -58,6 +58,7 @@
             this.textBox_camUsername = new System.Windows.Forms.TextBox();
             this.textBox_camPassword = new System.Windows.Forms.TextBox();
             this.button_SaveGlobalSetting = new System.Windows.Forms.Button();
+            this.button_Minimize = new System.Windows.Forms.Button();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox21)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox_result)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).BeginInit();
@@ -348,11 +349,22 @@
             this.button_SaveGlobalSetting.UseVisualStyleBackColor = true;
             this.button_SaveGlobalSetting.Click += new System.EventHandler(this.button_SaveGlobalSetting_Click);
             // 
+            // button_Minimize
+            // 
+            this.button_Minimize.Location = new System.Drawing.Point(1666, 12);
+            this.button_Minimize.Name = "button_Minimize";
+            this.button_Minimize.Size = new System.Drawing.Size(75, 36);
+            this.button_Minimize.TabIndex = 105;
+            this.button_Minimize.Text = "최소화";
+            this.button_Minimize.UseVisualStyleBackColor = true;
+            this.button_Minimize.Click += new System.EventHandler(this.button_Minimize_Click);
+            // 
             // MainForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(96F, 96F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Dpi;
             this.ClientSize = new System.Drawing.Size(1920, 1040);
+            this.Controls.Add(this.button_Minimize);
             this.Controls.Add(this.button_SaveGlobalSetting);
             this.Controls.Add(this.textBox_camPassword);
             this.Controls.Add(this.textBox_camUsername);
@@ -430,6 +442,7 @@
         private System.Windows.Forms.TextBox textBox_camUsername;
         private System.Windows.Forms.TextBox textBox_camPassword;
         private System.Windows.Forms.Button button_SaveGlobalSetting;
+        private System.Windows.Forms.Button button_Minimize;
     }
 }
 

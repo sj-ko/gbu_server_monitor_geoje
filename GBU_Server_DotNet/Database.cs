@@ -14,11 +14,13 @@ using FirebirdSql;
 using FirebirdSql.Data;
 using FirebirdSql.Data.FirebirdClient;
 #endif
+using System.Configuration;
 
 namespace GBU_Server_Monitor
 {
     public class Database
     {
+#if false
         private string _savepath = "";
         public string SavePath
         {
@@ -31,13 +33,10 @@ namespace GBU_Server_Monitor
                 _savepath = value;
             }
         }
+#endif
 
 #if __USE_FIREBIRD__
-        private string strConn = "User=sysdba;" +
-                                "Password=masterkey;" +
-                                "Database=c:/dev/gbuanpr_geoje.fdb;" +
-                                "Server=127.0.0.1;" +
-                                "Port=3050;";
+        private string strConn = ConfigurationManager.ConnectionStrings["strConn"].ConnectionString;
         private FbConnection conn;
 #else
         private string strConn = "Server=192.168.0.40;Database=gbu_anpr1;Uid=test1;Pwd=test1;";
@@ -289,7 +288,6 @@ namespace GBU_Server_Monitor
 
             return 0;
         }
-#endif
 
         public void InsertPlateText(int camid, DateTime datetime, string plate, Image image)
         {
@@ -318,6 +316,7 @@ namespace GBU_Server_Monitor
             //
 
         }
+#endif
 
     }
 }

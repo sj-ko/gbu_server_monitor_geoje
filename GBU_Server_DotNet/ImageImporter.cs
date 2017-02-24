@@ -242,7 +242,10 @@ namespace GBU_Server_Monitor
                                 //db.InsertPlateText(camera.camID, DateTime.Now, plateStr, returnImage); // file write test
 
                                 // invoke anpr event to mainform
-                                ANPRDetected(cameraID, datetime, plateStr, plateImageFilename);
+                                if (ANPRDetected != null)
+                                {
+                                    ANPRDetected(cameraID, datetime, plateStr, plateImageFilename);
+                                }
                             }
                             else
                             {
