@@ -97,6 +97,7 @@
             this.pictureBox_searchImage.SizeMode = System.Windows.Forms.PictureBoxSizeMode.StretchImage;
             this.pictureBox_searchImage.TabIndex = 5;
             this.pictureBox_searchImage.TabStop = false;
+            this.pictureBox_searchImage.DoubleClick += new System.EventHandler(this.pictureBox_searchImage_DoubleClick);
             // 
             // label2
             // 

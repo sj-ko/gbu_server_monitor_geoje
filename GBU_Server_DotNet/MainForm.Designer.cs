@@ -345,7 +345,7 @@
             this.button_SaveGlobalSetting.Name = "button_SaveGlobalSetting";
             this.button_SaveGlobalSetting.Size = new System.Drawing.Size(76, 35);
             this.button_SaveGlobalSetting.TabIndex = 104;
-            this.button_SaveGlobalSetting.Text = "카메라목록 저장";
+            this.button_SaveGlobalSetting.Text = "설정 저장";
             this.button_SaveGlobalSetting.UseVisualStyleBackColor = true;
             this.button_SaveGlobalSetting.Click += new System.EventHandler(this.button_SaveGlobalSetting_Click);
             // 

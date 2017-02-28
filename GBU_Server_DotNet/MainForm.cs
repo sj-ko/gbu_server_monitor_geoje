@@ -26,6 +26,13 @@ namespace GBU_Server_Monitor
 {
     public partial class MainForm : Form
     {
+        [Serializable]
+        public class SettingContainer
+        {
+            public Setting globalSetting;
+            public List<ANPRCam> camList;
+        };
+
         public Setting setting;
 
         private const int NUM_OF_CAM = 100; //5;
@@ -111,7 +118,7 @@ namespace GBU_Server_Monitor
             listView_result.Columns.Add("시간", 200, HorizontalAlignment.Left);
             listView_result.Columns.Add("차량번호", 100, HorizontalAlignment.Left);
 
-            InitCamera();
+            InitSetting();
 
             // Initialize map:
             gMapControl1.MapProvider = GMap.NET.MapProviders.GoogleMapProvider.Instance;
@@ -129,13 +136,13 @@ namespace GBU_Server_Monitor
             
         }
 
-        private void InitCamera()
+        private void InitSetting()
         {
             setting = new Setting();
-            setting.PropertyChanged += camera_PropertyChanged;
+            setting.PropertyChanged += setting_PropertyChanged;
         }
 
-        private void camera_PropertyChanged(object sender, PropertyChangedEventArgs e)
+        private void setting_PropertyChanged(object sender, PropertyChangedEventArgs e)
         {
             //UpdateFormUIValue();
         }
@@ -299,7 +306,7 @@ namespace GBU_Server_Monitor
                     imageImporter[i] = new ImageImpoter();
                     imageImporter[i].ANPRDetected += MainForm_ANPRDetected;
                     imageImporter[i].SavePath = setting.savePath;
-                    imageImporter[i].InitCamera(_anprCamList[i].camid, _anprCamList[i].address, 500, _anprCamList[i].username, _anprCamList[i].password);
+                    imageImporter[i].InitCamera(_anprCamList[i].camid, _anprCamList[i].address, setting.importInterval, _anprCamList[i].username, _anprCamList[i].password, setting.anprTimeout);
                     imageImporter[i].Play();
                 }
 
@@ -603,6 +610,10 @@ namespace GBU_Server_Monitor
             AES.Padding = PaddingMode.PKCS7;
             AES.Mode = CipherMode.CBC;
 
+            var settingContainer = new SettingContainer();
+            settingContainer.globalSetting = setting;
+            settingContainer.camList = _anprCamList;
+
             try
             {
                 BinaryFormatter binFmt = new BinaryFormatter();
@@ -610,7 +621,7 @@ namespace GBU_Server_Monitor
                 {
                     using (CryptoStream cs = new CryptoStream(fs, AES.CreateEncryptor(), CryptoStreamMode.Write))
                     {
-                        binFmt.Serialize(cs, _anprCamList);
+                        binFmt.Serialize(cs, settingContainer);
                         cs.Close();
                     }
                     fs.Close();
@@ -642,6 +653,8 @@ namespace GBU_Server_Monitor
             AES.Padding = PaddingMode.PKCS7;
             AES.Mode = CipherMode.CBC;
 
+            var settingContainer = new SettingContainer();
+
             try
             {
                 BinaryFormatter binFmt = new BinaryFormatter();
@@ -649,7 +662,9 @@ namespace GBU_Server_Monitor
                 {
                     using (CryptoStream cs = new CryptoStream(rdr, AES.CreateDecryptor(), CryptoStreamMode.Read))
                     {
-                        _anprCamList = (List<ANPRCam>)binFmt.Deserialize(cs);
+                        settingContainer = (SettingContainer)binFmt.Deserialize(cs);
+                        setting = settingContainer.globalSetting;
+                        _anprCamList = settingContainer.camList;
                         cs.Close();
                     }
                     rdr.Close();

@@ -21,12 +21,16 @@ namespace GBU_Server_Monitor
         {
             MainForm form = (MainForm)this.Owner;
             Configure_textbox_savepath.Text = form.setting.savePath;
+            Configure_textbox_anprtimeout.Text = Convert.ToString(form.setting.anprTimeout, 10);
+            Configure_textbox_importinterval.Text = Convert.ToString(form.setting.importInterval, 10);
         }
 
         private void button_OK_Click(object sender, EventArgs e)
         {
             MainForm form = (MainForm)this.Owner;
             form.setting.savePath = Configure_textbox_savepath.Text;
+            form.setting.anprTimeout = Convert.ToInt32(Configure_textbox_anprtimeout.Text);
+            form.setting.importInterval = Convert.ToInt32(Configure_textbox_importinterval.Text);
             this.Close();
         }
 

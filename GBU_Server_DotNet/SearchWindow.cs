@@ -8,6 +8,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using System.IO;
+using System.Diagnostics;
 
 namespace GBU_Server_Monitor
 {
@@ -154,6 +155,22 @@ namespace GBU_Server_Monitor
             {
                 Search_button_search_Click(sender, e);
             }
+        }
+
+        private void pictureBox_searchImage_DoubleClick(object sender, EventArgs e)
+        {
+            // %SystemRoot%\System32\rundll32.exe "%ProgramFiles%\Windows Photo Viewer\PhotoViewer.dll", ImageView_Fullscreen %1
+
+            //string strCmdText;
+            //strCmdText = "\"%ProgramFiles%\\Windows Photo Viewer\\PhotoViewer.dll\", ImageView_Fullscreen " + pictureBox_searchImage.ImageLocation;
+            //System.Diagnostics.Process.Start("%SystemRoot%\\System32\\rundll32.exe", strCmdText);
+
+            ProcessStartInfo _processStartInfo = new ProcessStartInfo();
+            _processStartInfo.WorkingDirectory = @"%SystemRoot%\System32\";
+            _processStartInfo.FileName = @"rundll32.exe";
+            _processStartInfo.Arguments = "\"" + @"%ProgramFiles%\Windows Photo Viewer\PhotoViewer.dll" + "\"" + ", ImageView_Fullscreen " + pictureBox_searchImage.ImageLocation;
+            _processStartInfo.CreateNoWindow = false;
+            Process myProcess = Process.Start(_processStartInfo);
         }
 
 

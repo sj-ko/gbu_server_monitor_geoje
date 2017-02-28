@@ -65,7 +65,7 @@ namespace GBU_Server_Monitor
             StopMediaThread();
         }
 
-        public void InitCamera(int camID, string url, int interval, string username, string password)
+        public void InitCamera(int camID, string url, int interval, string username, string password, int anprTimeout)
         {
             camUrl = new Uri(url, UriKind.Absolute);
             mediaThreadInterval = interval;
@@ -75,7 +75,7 @@ namespace GBU_Server_Monitor
             camPassword = password;
 
             // anpr init
-            initANPR();
+            initANPR(anprTimeout);
         }
 
         public void Play()
@@ -106,7 +106,7 @@ namespace GBU_Server_Monitor
             return image;
         }
 
-        private void initANPR()
+        private void initANPR(int anprTimeout)
         {
             // set anpr property
             anpr.SetProperty("anprname", "cmanpr-7.3.9.5:kor");
@@ -125,7 +125,7 @@ namespace GBU_Server_Monitor
             anpr.SetProperty("slant_min", "-13"); // "-10"); // Default -55
             anpr.SetProperty("slant_max", "56"); // "10"); // Default 27
 
-            anpr.SetProperty("timeout", "300"); // default 100 
+            anpr.SetProperty("timeout", anprTimeout); //"300"); // default 100 
 
             anpr.SetProperty("contrast_min", "9");
             anpr.SetProperty("xtoyres", "100");
@@ -180,12 +180,14 @@ namespace GBU_Server_Monitor
 
         private void MediaThreadFunction()
         {
+            WebClient webClient = new WebClient();
+            //webClient.OpenReadCompleted += new OpenReadCompletedEventHandler(imageDownload_openReadCompleted);
+            webClient.Credentials = new NetworkCredential(camUsername, camPassword); // to do : change to SecureString
+            //webClient.OpenRead(camUrl);
+
             while (_isMediaThreadRunning)
             {
-                WebClient webClient = new WebClient();
-                //webClient.OpenReadCompleted += new OpenReadCompletedEventHandler(imageDownload_openReadCompleted);
-                webClient.Credentials = new NetworkCredential(camUsername, camPassword); // to do : change to SecureString
-                //webClient.OpenRead(camUrl);
+                
 
                 try
                 {
@@ -208,6 +210,7 @@ namespace GBU_Server_Monitor
             while (_isANPRThreadRunning)
             {
                 byte[] imageData = GetImage(); // dequeue image
+                int foundcount = 0;
 
                 if (imageData != null)
                 {
@@ -218,8 +221,9 @@ namespace GBU_Server_Monitor
 
                         // Finds the first plate and displays it
                         bool isFound = anpr.FindFirst(gximage);
-                        if (isFound)
+                        while (isFound)
                         {
+                            foundcount++;
                             // plate found
                             DateTime datetime = DateTime.Now;
                             string plateStr = anpr.GetText();
@@ -252,8 +256,15 @@ namespace GBU_Server_Monitor
                                 // wrong plate
                                 Console.WriteLine("Wrong plate found ch " + cameraID);
                             }
+
+                            isFound = anpr.FindNext();
                         }
-                        else
+                        /*else
+                        {
+                            // no plate
+                            Console.WriteLine("No plate found ch " + cameraID);
+                        }*/
+                        if (foundcount == 0)
                         {
                             // no plate
                             Console.WriteLine("No plate found ch " + cameraID);

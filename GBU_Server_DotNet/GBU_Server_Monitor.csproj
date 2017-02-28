@@ -102,7 +102,7 @@
   <ItemGroup>
     <Reference Include="cmanprdotnet8, Version=7.3.1.1, Culture=neutral, PublicKeyToken=edd405d775b0b262, processorArchitecture=AMD64">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\Windows\System32\gx\dotnet\cmanprdotnet8.dll</HintPath>
+      <HintPath>lib\cmanprdotnet8.dll</HintPath>
     </Reference>
     <Reference Include="FirebirdSql.Data.FirebirdClient, Version=4.10.0.0, Culture=neutral, PublicKeyToken=3750abcc3150b00c, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
@@ -116,7 +116,7 @@
     </Reference>
     <Reference Include="gxdotnet8, Version=7.3.1.1, Culture=neutral, PublicKeyToken=e4890e0fa5b8cf0d, processorArchitecture=AMD64">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\..\Windows\System32\gx\dotnet\gxdotnet8.dll</HintPath>
+      <HintPath>lib\gxdotnet8.dll</HintPath>
     </Reference>
     <Reference Include="MjpegProcessor">
       <HintPath>..\..\mjpeg-101253\MJPEG\MjpegProcessorTestWinForms\bin\Release\MjpegProcessor.dll</HintPath>

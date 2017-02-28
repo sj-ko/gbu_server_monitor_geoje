@@ -33,6 +33,10 @@
             this.Configure_groupBox3 = new System.Windows.Forms.GroupBox();
             this.Configure_textbox_savepath = new System.Windows.Forms.TextBox();
             this.label7 = new System.Windows.Forms.Label();
+            this.label2 = new System.Windows.Forms.Label();
+            this.label3 = new System.Windows.Forms.Label();
+            this.Configure_textbox_anprtimeout = new System.Windows.Forms.TextBox();
+            this.Configure_textbox_importinterval = new System.Windows.Forms.TextBox();
             this.Configure_groupBox3.SuspendLayout();
             this.SuspendLayout();
             // 
@@ -83,11 +87,47 @@
             this.label7.TabIndex = 10;
             this.label7.Text = "경로";
             // 
+            // label2
+            // 
+            this.label2.AutoSize = true;
+            this.label2.Location = new System.Drawing.Point(26, 178);
+            this.label2.Name = "label2";
+            this.label2.Size = new System.Drawing.Size(88, 12);
+            this.label2.TabIndex = 11;
+            this.label2.Text = "ANPR Timeout";
+            // 
+            // label3
+            // 
+            this.label3.AutoSize = true;
+            this.label3.Location = new System.Drawing.Point(30, 211);
+            this.label3.Name = "label3";
+            this.label3.Size = new System.Drawing.Size(84, 12);
+            this.label3.TabIndex = 12;
+            this.label3.Text = "Image Interval";
+            // 
+            // Configure_textbox_anprtimeout
+            // 
+            this.Configure_textbox_anprtimeout.Location = new System.Drawing.Point(132, 169);
+            this.Configure_textbox_anprtimeout.Name = "Configure_textbox_anprtimeout";
+            this.Configure_textbox_anprtimeout.Size = new System.Drawing.Size(118, 21);
+            this.Configure_textbox_anprtimeout.TabIndex = 14;
+            // 
+            // Configure_textbox_importinterval
+            // 
+            this.Configure_textbox_importinterval.Location = new System.Drawing.Point(132, 202);
+            this.Configure_textbox_importinterval.Name = "Configure_textbox_importinterval";
+            this.Configure_textbox_importinterval.Size = new System.Drawing.Size(118, 21);
+            this.Configure_textbox_importinterval.TabIndex = 15;
+            // 
             // ConfigureWindow
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(96F, 96F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Dpi;
             this.ClientSize = new System.Drawing.Size(355, 352);
+            this.Controls.Add(this.Configure_textbox_importinterval);
+            this.Controls.Add(this.Configure_textbox_anprtimeout);
+            this.Controls.Add(this.label3);
+            this.Controls.Add(this.label2);
             this.Controls.Add(this.Configure_groupBox3);
             this.Controls.Add(this.button_Cancel);
             this.Controls.Add(this.button_OK);
@@ -100,6 +140,7 @@
             this.Configure_groupBox3.ResumeLayout(false);
             this.Configure_groupBox3.PerformLayout();
             this.ResumeLayout(false);
+            this.PerformLayout();
 
         }
 
@@ -110,5 +151,9 @@
         private System.Windows.Forms.GroupBox Configure_groupBox3;
         private System.Windows.Forms.TextBox Configure_textbox_savepath;
         private System.Windows.Forms.Label label7;
+        private System.Windows.Forms.Label label2;
+        private System.Windows.Forms.Label label3;
+        private System.Windows.Forms.TextBox Configure_textbox_anprtimeout;
+        private System.Windows.Forms.TextBox Configure_textbox_importinterval;
     }
 }
