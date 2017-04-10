@@ -111,28 +111,6 @@
             // comboBox_Channel
             // 
             this.comboBox_Channel.FormattingEnabled = true;
-            this.comboBox_Channel.Items.AddRange(new object[] {
-            "전체",
-            "Cam 0",
-            "Cam 1",
-            "Cam 2",
-            "Cam 3",
-            "Cam 4",
-            "Cam 5",
-            "Cam 6",
-            "Cam 7",
-            "Cam 8",
-            "Cam 9",
-            "Cam 10",
-            "Cam 11",
-            "Cam 12",
-            "Cam 13",
-            "Cam 14",
-            "Cam 15",
-            "Cam 16",
-            "Cam 17",
-            "Cam 18",
-            "Cam 19"});
             this.comboBox_Channel.Location = new System.Drawing.Point(98, 23);
             this.comboBox_Channel.Name = "comboBox_Channel";
             this.comboBox_Channel.Size = new System.Drawing.Size(121, 20);

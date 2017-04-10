@@ -44,11 +44,6 @@ namespace GBU_Server_Monitor
             dbManager = form.dbManager;
         }
 
-        private void dateTimePicker1_ValueChanged(object sender, EventArgs e)
-        {
-
-        }
-
         private void comboBox_Channel_SelectedIndexChanged(object sender, EventArgs e)
         {
 
@@ -56,26 +51,33 @@ namespace GBU_Server_Monitor
 
         private void StatisticsWindow_Load(object sender, EventArgs e)
         {
-
+            dateTimePicker2.Value = new DateTime(DateTime.Now.Year, DateTime.Now.Month, DateTime.Now.Day, 0, 0, 0);
+            dateTimePicker4.Value = new DateTime(DateTime.Now.Year, DateTime.Now.Month, DateTime.Now.Day, 23, 59, 59);
         }
 
         private void button_Search_Click(object sender, EventArgs e)
         {
             MainForm form = (MainForm)this.Owner;
             DateTime targetDateTime = dateTimePicker1.Value;
+
+            DateTime startDate = dateTimePicker1.Value;
+            DateTime startTime = dateTimePicker2.Value;
+            DateTime endDate = dateTimePicker3.Value;
+            DateTime endTime = dateTimePicker4.Value;
+
             DataTable result = new DataTable();
             int ch = comboBox_Channel.SelectedIndex;
 
             listView_Result.Items.Clear();
 
-            // result from local file
             // single channel search
             if (ch != 0)
             {
                 string target = comboBox_Channel.GetItemText(comboBox_Channel.Items[ch]);
                 string[] targetArr = target.Split(' ');
                 int camid = Convert.ToInt32(targetArr[0], 10);
-                dbManager.SearchPlateByDate(camid, targetDateTime, ref result);
+                //dbManager.SearchPlateByDate(camid, targetDateTime, ref result);
+                dbManager.SearchPlateByRange(camid, startDate, startTime, endDate, endTime, ref result);
 
                 string[] itemStr = { target, Convert.ToString(result.Rows.Count) };
                 ListViewItem item = new ListViewItem(itemStr);
@@ -89,7 +91,8 @@ namespace GBU_Server_Monitor
                     string target = comboBox_Channel.GetItemText(comboBox_Channel.Items[i]);
                     string[] targetArr = target.Split(' ');
                     int camid = Convert.ToInt32(targetArr[0], 10);
-                    dbManager.SearchPlateByDate(camid, targetDateTime, ref result);
+                    //dbManager.SearchPlateByDate(camid, targetDateTime, ref result);
+                    dbManager.SearchPlateByRange(camid, startDate, startTime, endDate, endTime, ref result);
 
                     string[] itemStr = { target, Convert.ToString(result.Rows.Count) };
                     ListViewItem item = new ListViewItem(itemStr);
@@ -103,5 +106,63 @@ namespace GBU_Server_Monitor
         {
             this.Close();
         }
+
+        private void label3_Click(object sender, EventArgs e)
+        {
+
+        }
+
+        private void dateTimePicker1_ValueChanged(object sender, EventArgs e)
+        {
+            if (dateTimePicker1.Value >= dateTimePicker3.Value)
+            {
+                dateTimePicker3.Value = dateTimePicker1.Value;
+                if (dateTimePicker2.Value >= dateTimePicker4.Value)
+                {
+                    dateTimePicker2.Value = dateTimePicker4.Value;
+                }
+            }
+        }
+
+        private void dateTimePicker2_ValueChanged(object sender, EventArgs e)
+        {
+            if (dateTimePicker1.Value == dateTimePicker3.Value)
+            {
+                if (dateTimePicker2.Value >= dateTimePicker4.Value)
+                {
+                    dateTimePicker2.Value = dateTimePicker4.Value;
+                }
+            }
+        }
+
+        private void dateTimePicker3_ValueChanged(object sender, EventArgs e)
+        {
+            if (dateTimePicker3.Value <= dateTimePicker1.Value)
+            {
+                dateTimePicker1.Value = dateTimePicker3.Value;
+                if (dateTimePicker4.Value <= dateTimePicker2.Value)
+                {
+                    dateTimePicker4.Value = dateTimePicker2.Value;
+                }
+            }
+        }
+
+        private void dateTimePicker4_ValueChanged(object sender, EventArgs e)
+        {
+            if (dateTimePicker1.Value == dateTimePicker3.Value)
+            {
+                if (dateTimePicker4.Value <= dateTimePicker2.Value)
+                {
+                    dateTimePicker4.Value = dateTimePicker2.Value;
+                }
+            }
+        }
+
+        private void listView_Result_SelectedIndexChanged(object sender, EventArgs e)
+        {
+
+        }
+
+
     }
 }

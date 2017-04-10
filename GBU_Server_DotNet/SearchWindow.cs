@@ -28,6 +28,7 @@ namespace GBU_Server_Monitor
 
         private List<PLATE_FOUND> _plateList = new List<PLATE_FOUND>();
         private int _plateListIdx = 0;
+        private int _camCount = 0;
 
         public SearchWindow()
         {
@@ -45,6 +46,14 @@ namespace GBU_Server_Monitor
             Search_listView1.Columns.Add("카메라", 90, HorizontalAlignment.Left);
             Search_listView1.Columns.Add("시간", 170, HorizontalAlignment.Left);
             Search_listView1.Columns.Add("차량번호", 100, HorizontalAlignment.Left);
+
+            _camCount = form._anprCamList.Count;
+
+            comboBox_Channel.Items.Add("전체");
+            for (int i = 0; i < _camCount; i++)
+            {
+                comboBox_Channel.Items.Add(form._anprCamList[i].camid + " - " + form._anprCamList[i].name);
+            }
 
             comboBox_Channel.SelectedIndex = 0;
 
@@ -66,30 +75,72 @@ namespace GBU_Server_Monitor
             _plateListIdx = 0;
 
             Search_listView1.Items.Clear();
-            
-            // result from DB
-            dbManager.SearchPlate(search_textBox_search.Text, ref DBresult);
+
+            int ch = comboBox_Channel.SelectedIndex;
+
+            // single channel search
+            if (ch != 0)
+            {
+                string target = comboBox_Channel.GetItemText(comboBox_Channel.Items[ch]);
+                string[] targetArr = target.Split(' ');
+                int camid = Convert.ToInt32(targetArr[0], 10);
+
+                // result from DB
+                dbManager.SearchPlate(camid, search_textBox_search.Text, ref DBresult);
+
+                // read DB result CAMID, ANPRDATE, ANPRTIME, PLATE, IMAGEPATH
+                foreach (DataRow dr in DBresult.Rows)
+                {
+                    DateTime myDateTime = DateTime.ParseExact(dr["ANPRDATE"].ToString().Substring(0, 10) + " " + dr["ANPRTIME"].ToString(), "yyyy-MM-dd HH:mm:ss", System.Globalization.CultureInfo.InvariantCulture);
+                    string[] itemStr = { Convert.ToString(dr["CAMID"]), myDateTime.ToString(), Convert.ToString(dr["PLATE"]) };
+                    ListViewItem item = new ListViewItem(itemStr);
+                    Search_listView1.Items.Add(item);
+
+                    PLATE_FOUND plate = new PLATE_FOUND();
+                    plate.cam = Convert.ToInt32(dr["CAMID"]);
+                    plate.dateTime = myDateTime;
+                    plate.id = _plateListIdx;
+                    plate.plateStr = Convert.ToString(dr["PLATE"]);
+                    plate.imageFilePath = Convert.ToString(dr["IMAGEPATH"]);
+
+                    _plateList.Add(plate);
+                    _plateListIdx++;
+                }
+            }
+            // entire search
+            else
+            {
+                for (int i = 1; i < comboBox_Channel.Items.Count; i++)
+                {
+                    string target = comboBox_Channel.GetItemText(comboBox_Channel.Items[i]);
+                    string[] targetArr = target.Split(' ');
+                    int camid = Convert.ToInt32(targetArr[0], 10);
+
+                    // result from DB
+                    dbManager.SearchPlate(camid, search_textBox_search.Text, ref DBresult);
+
+                    // read DB result CAMID, ANPRDATE, ANPRTIME, PLATE, IMAGEPATH
+                    foreach (DataRow dr in DBresult.Rows)
+                    {
+                        DateTime myDateTime = DateTime.ParseExact(dr["ANPRDATE"].ToString().Substring(0, 10) + " " + dr["ANPRTIME"].ToString(), "yyyy-MM-dd HH:mm:ss", System.Globalization.CultureInfo.InvariantCulture);
+                        string[] itemStr = { Convert.ToString(dr["CAMID"]), myDateTime.ToString(), Convert.ToString(dr["PLATE"]) };
+                        ListViewItem item = new ListViewItem(itemStr);
+                        Search_listView1.Items.Add(item);
+
+                        PLATE_FOUND plate = new PLATE_FOUND();
+                        plate.cam = Convert.ToInt32(dr["CAMID"]);
+                        plate.dateTime = myDateTime;
+                        plate.id = _plateListIdx;
+                        plate.plateStr = Convert.ToString(dr["PLATE"]);
+                        plate.imageFilePath = Convert.ToString(dr["IMAGEPATH"]);
+
+                        _plateList.Add(plate);
+                        _plateListIdx++;
+                    }
+                }
+            }
             // result from local file
             //dbManager.SearchPlateForFile(comboBox_Channel.SelectedIndex - 1 ,search_textBox_search.Text, ref result);
-
-            // read DB result CAMID, ANPRDATE, ANPRTIME, PLATE, IMAGEPATH
-            foreach (DataRow dr in DBresult.Rows)
-            {
-               DateTime myDateTime = DateTime.ParseExact(dr["ANPRDATE"].ToString().Substring(0, 10) + " " + dr["ANPRTIME"].ToString(), "yyyy-MM-dd HH:mm:ss", System.Globalization.CultureInfo.InvariantCulture);
-               string[] itemStr = { Convert.ToString(dr["CAMID"]), myDateTime.ToString(), Convert.ToString(dr["PLATE"]) };
-               ListViewItem item = new ListViewItem(itemStr);
-               Search_listView1.Items.Add(item);
-
-               PLATE_FOUND plate = new PLATE_FOUND();
-               plate.cam = Convert.ToInt32(dr["CAMID"]);
-               plate.dateTime = myDateTime;
-               plate.id = _plateListIdx;
-               plate.plateStr = Convert.ToString(dr["PLATE"]);
-               plate.imageFilePath = Convert.ToString(dr["IMAGEPATH"]);
-
-               _plateList.Add(plate);
-               _plateListIdx++;
-            }
 
             // read local file result and add list
             /*foreach (DataRow dr in result.Rows)
@@ -159,7 +210,7 @@ namespace GBU_Server_Monitor
 
         private void pictureBox_searchImage_DoubleClick(object sender, EventArgs e)
         {
-            // %SystemRoot%\System32\rundll32.exe "%ProgramFiles%\Windows Photo Viewer\PhotoViewer.dll", ImageView_Fullscreen %1
+            // %SystemRoot%\System32\rundll32.exe "%ProgramFiles%\Windows Photo Viewer\PhotoViewer.dll", ImageView_Fullscreen %1 
 
             //string strCmdText;
             //strCmdText = "\"%ProgramFiles%\\Windows Photo Viewer\\PhotoViewer.dll\", ImageView_Fullscreen " + pictureBox_searchImage.ImageLocation;
@@ -168,7 +219,7 @@ namespace GBU_Server_Monitor
             ProcessStartInfo _processStartInfo = new ProcessStartInfo();
             _processStartInfo.WorkingDirectory = @"%SystemRoot%\System32\";
             _processStartInfo.FileName = @"rundll32.exe";
-            _processStartInfo.Arguments = "\"" + @"%ProgramFiles%\Windows Photo Viewer\PhotoViewer.dll" + "\"" + ", ImageView_Fullscreen " + pictureBox_searchImage.ImageLocation;
+            _processStartInfo.Arguments = "\"" + @"C:\Program Files\Windows Photo Viewer\PhotoViewer.dll" + "\"" + ", ImageView_Fullscreen " + Path.GetFullPath(pictureBox_searchImage.ImageLocation);
             _processStartInfo.CreateNoWindow = false;
             Process myProcess = Process.Start(_processStartInfo);
         }

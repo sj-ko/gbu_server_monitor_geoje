@@ -129,14 +129,14 @@ namespace GBU_Server_Monitor
             return 0;
         }
 
-        public int SearchPlate(string str, ref DataTable resultTable)
+        public int SearchPlate(int ch, string str, ref DataTable resultTable)
         {
             try
             {
                 conn.Open();
                 DataSet ds = new DataSet();
 #if __USE_FIREBIRD__
-                FbDataAdapter da = new FbDataAdapter("SELECT * FROM ANPRTABLE WHERE PLATE like '%" + str + "%'", conn);
+                FbDataAdapter da = new FbDataAdapter("SELECT * FROM ANPRTABLE WHERE PLATE like '%" + str + "%' and CAMID like " + ch, conn);
 #else
                 MySqlDataAdapter da = new MySqlDataAdapter("SELECT * FROM anpr_test1 WHERE plate like '%" + str + "%'", conn);
 #endif
@@ -198,6 +198,51 @@ namespace GBU_Server_Monitor
 
             return 0;
         }
+
+        public int SearchPlateByRange(int ch, DateTime startDate, DateTime startTime, DateTime endDate, DateTime endTime, ref DataTable resultTable)
+        {
+            try
+            {
+                conn.Open();
+                DataSet ds = new DataSet();
+
+                string searchStartDate = string.Format("{0:yyyy/MM/dd}", startDate); // ANPRDATE
+                string searchStartTime = string.Format("{0:HH:mm:ss}", startTime); // ANPRTIME
+                string searchEndDate = string.Format("{0:yyyy/MM/dd}", endDate); // ANPRDATE
+                string searchEndTime = string.Format("{0:HH:mm:ss}", endTime); // ANPRTIME
+
+                Console.WriteLine(searchStartDate + " " + searchStartTime + " " + searchEndDate + " " + searchEndTime);
+
+#if __USE_FIREBIRD__
+                FbDataAdapter da = new FbDataAdapter
+                    ("select * from anprtable where cast(anprdate as date) + cast(anprtime as time) >= '" + searchStartDate + " " + searchStartTime +
+                    "' and cast(anprdate as date) + cast(anprtime as time) <= '" + searchEndDate + " " + searchEndTime + "' and camid like " + ch, conn);
+#else
+                MySqlDataAdapter da = new MySqlDataAdapter("SELECT * FROM anpr_test1 WHERE plate like '%" + str + "%'", conn);
+#endif
+                da.Fill(ds, "mytable");
+
+                DataTable dt = ds.Tables["mytable"];
+                foreach (DataRow dr in dt.Rows)
+                {
+#if __USE_FIREBIRD__
+                    Console.WriteLine(string.Format("Name = {0}, Desc = {1}", dr["ANPRTIME"], dr["PLATE"]));
+#else
+                    Console.WriteLine(string.Format("Name = {0}, Desc = {1}", dr["dateTime"], dr["plate"]));
+#endif
+                }
+                resultTable = dt;
+                conn.Close();
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e.ToString() + "::" + e.StackTrace);
+                conn.Close();
+            }
+
+            return 0;
+        }
+
 #if false
         public int SearchPlateForFile(int ch, string str, ref DataTable resultTable)
         {

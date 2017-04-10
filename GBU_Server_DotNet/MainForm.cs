@@ -21,6 +21,7 @@ using GMap.NET.WindowsForms.ToolTips;
 using System.Runtime.Serialization.Formatters.Binary;
 using System.Security.Cryptography;
 using System.Configuration;
+using System.Diagnostics;
 
 namespace GBU_Server_Monitor
 {
@@ -94,6 +95,10 @@ namespace GBU_Server_Monitor
 
         private ImageImpoter[] imageImporter = new ImageImpoter[NUM_OF_CAM];
 
+        private BackgroundWorker playWorker = new BackgroundWorker();
+        private BackgroundWorker stopWorker = new BackgroundWorker();
+        private PopUp popUp;
+
         public MainForm()
         {
             InitializeComponent();
@@ -110,6 +115,18 @@ namespace GBU_Server_Monitor
             dbManager = new Database();
             _plateList = new List<PLATE_FOUND>();
 
+            playWorker.WorkerReportsProgress = true;
+            playWorker.WorkerSupportsCancellation = true;
+            playWorker.DoWork += new DoWorkEventHandler(playWorker_DoWork);
+            playWorker.ProgressChanged += new ProgressChangedEventHandler(playWorker_ProgressChanged);
+            playWorker.RunWorkerCompleted += new RunWorkerCompletedEventHandler(playWorker_RunWorkerCompleted);
+
+            stopWorker.WorkerReportsProgress = true;
+            stopWorker.WorkerSupportsCancellation = true;
+            stopWorker.DoWork += new DoWorkEventHandler(stopWorker_DoWork);
+            stopWorker.ProgressChanged += new ProgressChangedEventHandler(stopWorker_ProgressChanged);
+            stopWorker.RunWorkerCompleted += new RunWorkerCompletedEventHandler(stopWorker_RunWorkerCompleted);
+
             listView_result.View = View.Details;
             listView_result.FullRowSelect = true;
             listView_result.GridLines = true;
@@ -123,7 +140,7 @@ namespace GBU_Server_Monitor
             // Initialize map:
             gMapControl1.MapProvider = GMap.NET.MapProviders.GoogleMapProvider.Instance;
             GMap.NET.GMaps.Instance.Mode = GMap.NET.AccessMode.ServerAndCache;
-            gMapControl1.Position = new PointLatLng(34.8544319, 128.6288147);
+            gMapControl1.Position = new PointLatLng(34.8544319, 128.6288147); // for geoje
             gMapControl1.CanDragMap = true;
             gMapControl1.DragButton = MouseButtons.Left;
             gMapControl1.CacheLocation = Environment.CurrentDirectory + @"\GMapCache";
@@ -156,13 +173,18 @@ namespace GBU_Server_Monitor
                 timer = null;
             }
 
+            int progress = 0;
             for (int i = 0; i < _anprCamList.Count; i++)
             {
                 if (imageImporter[i] != null)
                 {
-                    imageImporter[i].ANPRDetected -= MainForm_ANPRDetected;
                     imageImporter[i].Stop();
+                    imageImporter[i].ANPRDetected -= MainForm_ANPRDetected;
+                    imageImporter[i].ANPRStatus -= MainForm_ANPRStatus;
                     imageImporter[i] = null;
+
+                    progress = (int)((float)((float)i / (float)_anprCamList.Count) * 100);
+                    stopWorker.ReportProgress(progress);
                 }
             }
 
@@ -277,17 +299,16 @@ namespace GBU_Server_Monitor
                 // Rev 2 - Axxon Module
                 
                 // ---
-                PopUp popUp = new PopUp("연결 끊는 중...");
-                popUp.Show();
-                Stop();
-                popUp.Close();
+                popUp = new PopUp();
+                popUp.SetMessage("연결 끊는 중...");
+                stopWorker.RunWorkerAsync();
+                popUp.ShowDialog();
 
-                button_PlayStop.Text = "연결";
-
-                button_camAdd.Enabled = true;
-                button_camDel.Enabled = true;
-
-                playStatus = false;
+                // workaround for camname reset
+                foreach (ANPRCam cam in _anprCamList)
+                {
+                    cam.node.Text = "카메라 " + cam.camid + " - " + cam.name;
+                }
             }
             else
             {
@@ -300,15 +321,10 @@ namespace GBU_Server_Monitor
                 */
                 // ---
                 // Rev 2 - Axxon Module
-                for (int i = 0; i < _anprCamList.Count; i++)
-                {
-                    //string axxonUrl = "http://192.168.0.16/Streaming/channels/1/picture"; // AXXON_HTTP_URL_1 + _anprCamList[i].camid + AXXON_HTTP_URL_2;
-                    imageImporter[i] = new ImageImpoter();
-                    imageImporter[i].ANPRDetected += MainForm_ANPRDetected;
-                    imageImporter[i].SavePath = setting.savePath;
-                    imageImporter[i].InitCamera(_anprCamList[i].camid, _anprCamList[i].address, setting.importInterval, _anprCamList[i].username, _anprCamList[i].password, setting.anprTimeout);
-                    imageImporter[i].Play();
-                }
+                popUp = new PopUp();
+                popUp.SetMessage("연결 중...");
+                playWorker.RunWorkerAsync();
+                popUp.ShowDialog();
 
                 // ---
 
@@ -330,13 +346,104 @@ namespace GBU_Server_Monitor
                     }
                 }*/
 
-                button_PlayStop.Text = "끊기";
-
-                button_camAdd.Enabled = false;
-                button_camDel.Enabled = false;
-
-                playStatus = true;
+                
             }
+        }
+
+        void playWorker_DoWork(object sender, DoWorkEventArgs e)
+        {
+            int progress = 0;
+            for (int i = 0; i < _anprCamList.Count; i++)
+            {
+                //string axxonUrl = "http://192.168.0.16/Streaming/channels/1/picture"; // AXXON_HTTP_URL_1 + _anprCamList[i].camid + AXXON_HTTP_URL_2;
+                imageImporter[i] = new ImageImpoter();
+                imageImporter[i].ANPRDetected += MainForm_ANPRDetected;
+                imageImporter[i].ANPRStatus += MainForm_ANPRStatus;
+                imageImporter[i].SavePath = setting.savePath;
+                imageImporter[i].InitCamera(_anprCamList[i].camid, _anprCamList[i].address, setting.importInterval, _anprCamList[i].username, _anprCamList[i].password, setting.anprTimeout);
+                imageImporter[i].Play();
+
+                progress = (int)((float)((float)i / (float)_anprCamList.Count) * 100);
+                playWorker.ReportProgress(progress);
+            }
+        }
+
+        void MainForm_ANPRStatus(int channel, int eventstatus)
+        {
+            string statusMsg = "";
+            switch (eventstatus)
+            {
+                case 0: default:
+                    statusMsg = "";
+                    break;
+                case 1:
+                    statusMsg = " [외부 파일 읽는 중]";
+                    break;
+                case 2:
+                    statusMsg = " [외부 파일 차번 인식 중]";
+                    break;
+                case 3:
+                    statusMsg = " [외부 파일 차번 인식 완료]";
+                    break;
+            }
+
+            foreach (ANPRCam cam in _anprCamList)
+            {
+                if (cam.camid == channel)
+                {
+                    this.Invoke(new MethodInvoker(delegate()
+                    {
+                        cam.node.Text = "카메라 " + cam.camid + " - " + cam.name + statusMsg;
+                    }
+                    ));
+                }
+            }
+
+
+
+        }
+
+        void playWorker_ProgressChanged(object sender, ProgressChangedEventArgs e)
+        {
+            popUp.progressBar.Value = e.ProgressPercentage;
+        }
+
+        void playWorker_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
+        {
+            popUp.Close();
+
+            button_PlayStop.Text = "끊기";
+
+            button_camAdd.Enabled = false;
+            button_camDel.Enabled = false;
+            button_addFile.Enabled = false;
+            button_SaveGlobalSetting.Enabled = false;
+
+            playStatus = true;
+        }
+
+        void stopWorker_DoWork(object sender, DoWorkEventArgs e)
+        {
+            Stop();
+        }
+
+        void stopWorker_ProgressChanged(object sender, ProgressChangedEventArgs e)
+        {
+            popUp.progressBar.Value = e.ProgressPercentage;
+        }
+
+        void stopWorker_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
+        {
+            popUp.Close();
+
+            button_PlayStop.Text = "연결";
+
+            button_camAdd.Enabled = true;
+            button_camDel.Enabled = true;
+            button_addFile.Enabled = true;
+            button_SaveGlobalSetting.Enabled = true;
+
+            playStatus = false;
         }
 
         void MainForm_ANPRDetected(int channel, DateTime dateTime, string plateStr, string imagePath)
@@ -395,10 +502,10 @@ namespace GBU_Server_Monitor
         private void button_Exit_Click(object sender, EventArgs e)
         {
             //System.Diagnostics.Process.Start(@"taskkill", @"/f /im GBU_Server_DotNet*");
-            PopUp popUp = new PopUp("연결 끊는 중...");
-            popUp.Show();
-            Stop();
-            popUp.Close();
+            popUp = new PopUp();
+            popUp.SetMessage("연결 끊는 중...");
+            stopWorker.RunWorkerAsync();
+            popUp.ShowDialog();
             //gMapControl1.Dispose(); // freeze?
             Application.Exit();
         }
@@ -489,11 +596,13 @@ namespace GBU_Server_Monitor
                     }
                 }
 
-                _anprCamList.Remove(targetCam);
-                targetCam.markersOverlay.Markers.Clear();
-                gMapControl1.Overlays.Remove(targetCam.markersOverlay);
-                treeView1.Nodes.Remove(_selectedNode);
-                
+                if (targetCam.markersOverlay != null)
+                {
+                    _anprCamList.Remove(targetCam);
+                    targetCam.markersOverlay.Markers.Clear();
+                    gMapControl1.Overlays.Remove(targetCam.markersOverlay);
+                    treeView1.Nodes.Remove(_selectedNode);
+                }
             }
             else
             {
@@ -690,6 +799,38 @@ namespace GBU_Server_Monitor
         private void button_Minimize_Click(object sender, EventArgs e)
         {
             this.WindowState = FormWindowState.Minimized;
+        }
+
+        private void pictureBox_result_Click(object sender, EventArgs e)
+        {
+            
+        }
+
+        private void button_addFile_Click(object sender, EventArgs e)
+        {
+            OpenFileDialog fileDialog = new OpenFileDialog();
+
+            fileDialog.Filter = "AVI|*.avi|MP4|*.mp4";
+            fileDialog.Title = "설정 파일 열기";
+
+            if (fileDialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
+            {
+                string path = fileDialog.FileName;
+                textBox_address.Text = path;
+            }
+        }
+
+        private void pictureBox_result_DoubleClick(object sender, EventArgs e)
+        {
+            if (pictureBox_result.ImageLocation != null)
+            {
+                ProcessStartInfo _processStartInfo = new ProcessStartInfo();
+                _processStartInfo.WorkingDirectory = @"%SystemRoot%\System32\";
+                _processStartInfo.FileName = @"rundll32.exe";
+                _processStartInfo.Arguments = "\"" + @"C:\Program Files\Windows Photo Viewer\PhotoViewer.dll" + "\"" + ", ImageView_Fullscreen " + Path.GetFullPath(pictureBox_result.ImageLocation);
+                _processStartInfo.CreateNoWindow = false;
+                Process myProcess = Process.Start(_processStartInfo);
+            }
         }
     }
 }

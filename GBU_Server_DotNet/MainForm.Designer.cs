@@ -59,6 +59,7 @@
             this.textBox_camPassword = new System.Windows.Forms.TextBox();
             this.button_SaveGlobalSetting = new System.Windows.Forms.Button();
             this.button_Minimize = new System.Windows.Forms.Button();
+            this.button_addFile = new System.Windows.Forms.Button();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox21)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox_result)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).BeginInit();
@@ -117,7 +118,7 @@
             // pictureBox21
             // 
             this.pictureBox21.ImageLocation = "gbudatalinks_logo.png";
-            this.pictureBox21.Location = new System.Drawing.Point(12, 924);
+            this.pictureBox21.Location = new System.Drawing.Point(12, 916);
             this.pictureBox21.Name = "pictureBox21";
             this.pictureBox21.Size = new System.Drawing.Size(123, 96);
             this.pictureBox21.TabIndex = 52;
@@ -185,17 +186,17 @@
             // 
             // button_camAdd
             // 
-            this.button_camAdd.Location = new System.Drawing.Point(123, 882);
+            this.button_camAdd.Location = new System.Drawing.Point(28, 882);
             this.button_camAdd.Name = "button_camAdd";
             this.button_camAdd.Size = new System.Drawing.Size(107, 23);
             this.button_camAdd.TabIndex = 81;
-            this.button_camAdd.Text = "카메라 추가";
+            this.button_camAdd.Text = "카메라 추가/변경";
             this.button_camAdd.UseVisualStyleBackColor = true;
             this.button_camAdd.Click += new System.EventHandler(this.button_camAdd_Click);
             // 
             // button_camDel
             // 
-            this.button_camDel.Location = new System.Drawing.Point(236, 882);
+            this.button_camDel.Location = new System.Drawing.Point(141, 882);
             this.button_camDel.Name = "button_camDel";
             this.button_camDel.Size = new System.Drawing.Size(107, 23);
             this.button_camDel.TabIndex = 82;
@@ -221,13 +222,16 @@
             this.pictureBox_result.SizeMode = System.Windows.Forms.PictureBoxSizeMode.StretchImage;
             this.pictureBox_result.TabIndex = 87;
             this.pictureBox_result.TabStop = false;
+            this.pictureBox_result.Click += new System.EventHandler(this.pictureBox_result_Click);
+            this.pictureBox_result.DoubleClick += new System.EventHandler(this.pictureBox_result_DoubleClick);
             // 
             // pictureBox1
             // 
-            this.pictureBox1.ImageLocation = "Yangsan.png";
-            this.pictureBox1.Location = new System.Drawing.Point(160, 924);
+            this.pictureBox1.ImageLocation = "geoje.png";
+            this.pictureBox1.Location = new System.Drawing.Point(160, 914);
             this.pictureBox1.Name = "pictureBox1";
-            this.pictureBox1.Size = new System.Drawing.Size(344, 96);
+            this.pictureBox1.Size = new System.Drawing.Size(14, 16);
+            this.pictureBox1.SizeMode = System.Windows.Forms.PictureBoxSizeMode.AutoSize;
             this.pictureBox1.TabIndex = 92;
             this.pictureBox1.TabStop = false;
             // 
@@ -359,11 +363,22 @@
             this.button_Minimize.UseVisualStyleBackColor = true;
             this.button_Minimize.Click += new System.EventHandler(this.button_Minimize_Click);
             // 
+            // button_addFile
+            // 
+            this.button_addFile.Location = new System.Drawing.Point(341, 882);
+            this.button_addFile.Name = "button_addFile";
+            this.button_addFile.Size = new System.Drawing.Size(94, 23);
+            this.button_addFile.TabIndex = 106;
+            this.button_addFile.Text = "외부파일연결";
+            this.button_addFile.UseVisualStyleBackColor = true;
+            this.button_addFile.Click += new System.EventHandler(this.button_addFile_Click);
+            // 
             // MainForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(96F, 96F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Dpi;
             this.ClientSize = new System.Drawing.Size(1920, 1040);
+            this.Controls.Add(this.button_addFile);
             this.Controls.Add(this.button_Minimize);
             this.Controls.Add(this.button_SaveGlobalSetting);
             this.Controls.Add(this.textBox_camPassword);
@@ -443,6 +458,7 @@
         private System.Windows.Forms.TextBox textBox_camPassword;
         private System.Windows.Forms.Button button_SaveGlobalSetting;
         private System.Windows.Forms.Button button_Minimize;
+        private System.Windows.Forms.Button button_addFile;
     }
 }
 

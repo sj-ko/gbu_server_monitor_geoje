@@ -10,6 +10,7 @@ using System.IO;
 using System.Collections.Concurrent;
 using gx;
 using cm;
+using System.Diagnostics;
 
 namespace GBU_Server_Monitor
 {
@@ -44,6 +45,9 @@ namespace GBU_Server_Monitor
         public delegate void OnANPRDetected(int channel, DateTime dateTime, string plateStr, string imagePath);
         public event OnANPRDetected ANPRDetected;
 
+        public delegate void OnANPRStatus(int channel, int eventstatus);
+        public event OnANPRStatus ANPRStatus;
+
         private string[] KOREA_LOCALAREA_LIST = {"서울","인천","세종","대전","대구","부산","광주","울산",
                                             "경기","강원","충북","충남","경북","경남","전북","전남","제주"};
 
@@ -55,14 +59,12 @@ namespace GBU_Server_Monitor
 
         public ImageImpoter()
         {
-            MediaThread = new Thread(MediaThreadFunction);
-            ANPRThread = new Thread(ANPRThreadFunction);
             db = new Database();
         }
 
         ~ImageImpoter()
         {
-            StopMediaThread();
+            Stop();
         }
 
         public void InitCamera(int camID, string url, int interval, string username, string password, int anprTimeout)
@@ -76,6 +78,17 @@ namespace GBU_Server_Monitor
 
             // anpr init
             initANPR(anprTimeout);
+
+            // thread init
+            if (url.StartsWith("http"))
+            {
+                MediaThread = new Thread(MediaThreadFunction);
+            }
+            else
+            {
+                MediaThread = new Thread(MediaThreadFunction2);
+            }
+            ANPRThread = new Thread(ANPRThreadFunction);
         }
 
         public void Play()
@@ -86,6 +99,12 @@ namespace GBU_Server_Monitor
 
         public void Stop()
         {
+            // add workaround for play/stop button
+            //if (ANPRStatus != null && camUrl.OriginalString.StartsWith("http") == false)
+            //{
+            //    ANPRStatus(cameraID, 0);
+            //}
+
             StopANPRThread();
             StopMediaThread();
         }
@@ -203,6 +222,56 @@ namespace GBU_Server_Monitor
                 Thread.Sleep(mediaThreadInterval); 
             }
 
+        }
+
+        private void MediaThreadFunction2()
+        {
+            ANPRStatus(cameraID, 1); // read file
+            Console.WriteLine("Start ffmpeg thread");
+            Process process;
+
+            process = new Process();
+            process.StartInfo.WorkingDirectory = Environment.CurrentDirectory;
+            process.StartInfo.Arguments = "-v quiet -i " + camUrl.OriginalString + " -vf fps=2 -f image2 -updatefirst 1 pipe:";
+            process.StartInfo.FileName = Environment.CurrentDirectory + @"\ffmpeg.exe";
+            process.StartInfo.UseShellExecute = false;
+            process.StartInfo.RedirectStandardOutput = true;
+            process.StartInfo.RedirectStandardError = true;
+            process.StartInfo.RedirectStandardInput = true;
+            process.StartInfo.CreateNoWindow = true;
+            process.StartInfo.LoadUserProfile = false;
+            process.EnableRaisingEvents = true;
+            process.Start();
+
+            Stream stream = process.StandardOutput.BaseStream;
+
+            bool isFirst = true;
+
+            foreach (byte[] image in GetThumbnails(stream))
+            {
+                if (isFirst)
+                {
+                    ANPRStatus(cameraID, 2); // processing anpr
+                }
+                isFirst = false;
+                imageList.Enqueue(image);
+
+                if (_isMediaThreadRunning == false)
+                {
+                    break;
+                }
+            }
+            //process.WaitForExit();
+
+            stream.Close();
+
+            //while (_isMediaThreadRunning)
+            //{
+                // end of thread cycle - mediaThreadInterval
+            //    Thread.Sleep(1); // (mediaThreadInterval); 
+            //}
+            Console.WriteLine("end of ffmpeg thread");
+            ANPRStatus(cameraID, 3); // done
         }
 
         private void ANPRThreadFunction()
@@ -448,6 +517,58 @@ namespace GBU_Server_Monitor
             }
 
             return str;
+        }
+
+        static IEnumerable<byte[]> GetThumbnails(Stream stream)
+        {
+            byte[] allImages;
+            using (var ms = new MemoryStream())
+            {
+                stream.CopyTo(ms);
+                allImages = ms.ToArray();
+            }
+            var bof = allImages.Take(8).ToArray(); //??
+            var prevOffset = -1;
+            foreach (var offset in GetBytePatternPositions(allImages, bof))
+            {
+                if (prevOffset > -1)
+                    yield return GetImageAt(allImages, prevOffset, offset);
+                prevOffset = offset;
+            }
+            if (prevOffset > -1)
+                yield return GetImageAt(allImages, prevOffset, allImages.Length);
+        }
+
+        static byte[] GetImageAt(byte[] data, int start, int end)
+        {
+            return data.Skip(start).Take(end).ToArray();
+        }
+
+        static IEnumerable<int> GetBytePatternPositions(byte[] data, byte[] pattern)
+        {
+            var dataLen = data.Length;
+            var patternLen = pattern.Length - 1;
+            int scanData = 0;
+            int scanPattern = 0;
+            while (scanData < dataLen)
+            {
+                if (pattern[0] == data[scanData])
+                {
+                    scanPattern = 1;
+                    scanData++;
+                    while (pattern[scanPattern] == data[scanData])
+                    {
+                        if (scanPattern == patternLen)
+                        {
+                            yield return scanData - patternLen;
+                            break;
+                        }
+                        scanPattern++;
+                        scanData++;
+                    }
+                }
+                scanData++;
+            }
         }
 
         public class LimitedQueue<T> : Queue<T>

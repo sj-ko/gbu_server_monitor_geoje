@@ -12,10 +12,13 @@ namespace GBU_Server_Monitor
 {
     public partial class PopUp : Form
     {
-        public PopUp(string message)
+        public PopUp()
         {
             InitializeComponent();
+        }
 
+        public void SetMessage(string message)
+        {
             this.label1.Text = message;
         }
     }
