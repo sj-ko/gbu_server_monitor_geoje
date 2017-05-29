@@ -94,6 +94,7 @@ namespace GBU_Server_Monitor
         private TreeNode _selectedNode;
 
         private ImageImpoter[] imageImporter = new ImageImpoter[NUM_OF_CAM];
+        private Client[] anprClient = new Client[NUM_OF_CAM];
 
         private BackgroundWorker playWorker = new BackgroundWorker();
         private BackgroundWorker stopWorker = new BackgroundWorker();
@@ -185,6 +186,12 @@ namespace GBU_Server_Monitor
 
                     progress = (int)((float)((float)i / (float)_anprCamList.Count) * 100);
                     stopWorker.ReportProgress(progress);
+                }
+
+                if (anprClient[i] != null)
+                {
+                    anprClient[i].Stop();
+                    anprClient[i] = null;
                 }
             }
 
@@ -356,12 +363,21 @@ namespace GBU_Server_Monitor
             for (int i = 0; i < _anprCamList.Count; i++)
             {
                 //string axxonUrl = "http://192.168.0.16/Streaming/channels/1/picture"; // AXXON_HTTP_URL_1 + _anprCamList[i].camid + AXXON_HTTP_URL_2;
-                imageImporter[i] = new ImageImpoter();
-                imageImporter[i].ANPRDetected += MainForm_ANPRDetected;
-                imageImporter[i].ANPRStatus += MainForm_ANPRStatus;
-                imageImporter[i].SavePath = setting.savePath;
-                imageImporter[i].InitCamera(_anprCamList[i].camid, _anprCamList[i].address, setting.importInterval, _anprCamList[i].username, _anprCamList[i].password, setting.anprTimeout);
-                imageImporter[i].Play();
+                if (setting.mode == 0)
+                {
+                    imageImporter[i] = new ImageImpoter();
+                    imageImporter[i].ANPRDetected += MainForm_ANPRDetected;
+                    imageImporter[i].ANPRStatus += MainForm_ANPRStatus;
+                    imageImporter[i].SavePath = setting.savePath;
+                    imageImporter[i].InitCamera(_anprCamList[i].camid, _anprCamList[i].address, setting.importInterval, _anprCamList[i].username, _anprCamList[i].password, setting.anprTimeout);
+                    imageImporter[i].Play();
+                }
+                else
+                {
+                    anprClient[i] = new Client();
+                    anprClient[i].InitConnection(setting.serverAddr);
+                    anprClient[i].Play();
+                }
 
                 progress = (int)((float)((float)i / (float)_anprCamList.Count) * 100);
                 playWorker.ReportProgress(progress);

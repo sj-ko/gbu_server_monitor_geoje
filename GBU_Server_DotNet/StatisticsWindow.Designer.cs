@@ -41,6 +41,8 @@
             this.dateTimePicker4 = new System.Windows.Forms.DateTimePicker();
             this.label4 = new System.Windows.Forms.Label();
             this.label5 = new System.Windows.Forms.Label();
+            this.listView_CarList = new System.Windows.Forms.ListView();
+            this.label6 = new System.Windows.Forms.Label();
             this.SuspendLayout();
             // 
             // label1
@@ -163,12 +165,31 @@
             this.label5.TabIndex = 12;
             this.label5.Text = "끝 시간";
             // 
+            // listView_CarList
+            // 
+            this.listView_CarList.Location = new System.Drawing.Point(385, 59);
+            this.listView_CarList.Name = "listView_CarList";
+            this.listView_CarList.Size = new System.Drawing.Size(554, 383);
+            this.listView_CarList.TabIndex = 13;
+            this.listView_CarList.UseCompatibleStateImageBehavior = false;
+            // 
+            // label6
+            // 
+            this.label6.AutoSize = true;
+            this.label6.Location = new System.Drawing.Point(383, 33);
+            this.label6.Name = "label6";
+            this.label6.Size = new System.Drawing.Size(57, 12);
+            this.label6.TabIndex = 14;
+            this.label6.Text = "차량 목록";
+            // 
             // StatisticsWindow
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(96F, 96F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Dpi;
             this.BackgroundImageLayout = System.Windows.Forms.ImageLayout.None;
-            this.ClientSize = new System.Drawing.Size(359, 479);
+            this.ClientSize = new System.Drawing.Size(951, 479);
+            this.Controls.Add(this.label6);
+            this.Controls.Add(this.listView_CarList);
             this.Controls.Add(this.label5);
             this.Controls.Add(this.label4);
             this.Controls.Add(this.dateTimePicker4);
@@ -209,5 +230,7 @@
         private System.Windows.Forms.DateTimePicker dateTimePicker4;
         private System.Windows.Forms.Label label4;
         private System.Windows.Forms.Label label5;
+        private System.Windows.Forms.ListView listView_CarList;
+        private System.Windows.Forms.Label label6;
     }
 }

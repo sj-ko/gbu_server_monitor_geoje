@@ -11,6 +11,7 @@ using System.Collections.Concurrent;
 using gx;
 using cm;
 using System.Diagnostics;
+using OpenCvSharp;
 
 namespace GBU_Server_Monitor
 {
@@ -35,7 +36,7 @@ namespace GBU_Server_Monitor
         private string camUsername, camPassword;
         private int mediaThreadInterval = 100; // ms
         private bool _isMediaThreadRunning = false, _isANPRThreadRunning = false;
-        private LimitedQueue<byte[]> imageList = new LimitedQueue<byte[]>(128);
+        private LimitedQueue<byte[]> imageList = new LimitedQueue<byte[]>(Constants.MAX_IMAGE_BUFFER);
 
         // Creates the ANPR object
         private cmAnpr anpr = new cmAnpr("default");
@@ -56,6 +57,14 @@ namespace GBU_Server_Monitor
                                            "고","노","도","로","모","보","소","오","조",
                                            "구","누","두","루","무","부","수","우","주",
                                            "하","허","호","배"};
+
+        public struct PLATE_CANDIDATE
+        {
+            public int id; // reserved
+            public int foundCount;
+            public int firstfoundTime;
+            public string plate_string;
+        }
 
         public ImageImpoter()
         {
@@ -128,7 +137,7 @@ namespace GBU_Server_Monitor
         private void initANPR(int anprTimeout)
         {
             // set anpr property
-            anpr.SetProperty("anprname", "cmanpr-7.3.9.5:kor");
+            anpr.SetProperty("anprname", "cmanpr-7.3.9.30:kor");
             anpr.SetProperty("size", "47"); // default 25  (20-->15)
             anpr.SetProperty("size_min", "8"); //"8"); // Default 6
             anpr.SetProperty("size_max", "82"); //"40"); // Default 93
@@ -136,13 +145,13 @@ namespace GBU_Server_Monitor
             anpr.SetProperty("nchar_min", "4"); // "7"); // Default 8
             anpr.SetProperty("nchar_max", "9"); // Default 9
 
-            anpr.SetProperty("slope", "4"); // "-5"); // Default -22
-            anpr.SetProperty("slope_min", "-31"); //-20"); // Default -22
-            anpr.SetProperty("slope_max", "37"); // "10"); // Default 34
+            anpr.SetProperty("slope", "4"); // "-5"); // Default -22  4
+            anpr.SetProperty("slope_min", "-31"); //-20"); // Default -22 -31
+            anpr.SetProperty("slope_max", "37"); // "10"); // Default 34 37
 
-            anpr.SetProperty("slant", "4"); // "0"); // Default 10
-            anpr.SetProperty("slant_min", "-13"); // "-10"); // Default -55
-            anpr.SetProperty("slant_max", "56"); // "10"); // Default 27
+            anpr.SetProperty("slant", "4"); // "0"); // Default 10 4
+            anpr.SetProperty("slant_min", "-13"); // "-10"); // Default -55 -13
+            anpr.SetProperty("slant_max", "56"); // "10"); // Default 27 56
 
             anpr.SetProperty("timeout", anprTimeout); //"300"); // default 100 
 
@@ -232,7 +241,7 @@ namespace GBU_Server_Monitor
 
             process = new Process();
             process.StartInfo.WorkingDirectory = Environment.CurrentDirectory;
-            process.StartInfo.Arguments = "-v quiet -i " + camUrl.OriginalString + " -vf fps=2 -f image2 -updatefirst 1 pipe:";
+            process.StartInfo.Arguments = "-v quiet -i \"" + camUrl.OriginalString + "\" -vf fps=3 -f image2 -updatefirst 1 pipe:";
             process.StartInfo.FileName = Environment.CurrentDirectory + @"\ffmpeg.exe";
             process.StartInfo.UseShellExecute = false;
             process.StartInfo.RedirectStandardOutput = true;
@@ -276,6 +285,8 @@ namespace GBU_Server_Monitor
 
         private void ANPRThreadFunction()
         {
+            List<PLATE_CANDIDATE> plate_candidates = new List<PLATE_CANDIDATE>();
+
             while (_isANPRThreadRunning)
             {
                 byte[] imageData = GetImage(); // dequeue image
@@ -299,26 +310,73 @@ namespace GBU_Server_Monitor
 
                             if (isValidPlateString(plateStr))
                             {
-                                string plateImageFilepath = _savepath + "\\ch" + cameraID;
-                                string dtStr = String.Format("{0:yyyyMMdd_HHmmss}", datetime);
-                                string plateImageFilename = plateImageFilepath + "\\CAM-" + cameraID + "_" + dtStr + "_" + plateStr + ".jpg";
-                                Console.WriteLine("Result: '{0}', ch {1}", plateStr, cameraID);
-
-                                // write anpr snapshot
-                                if (!Directory.Exists(plateImageFilepath))
+                                // Remove old results
+                                int currentTime = Environment.TickCount;
+                                for (int i = plate_candidates.Count - 1; i >= 0; i--)
                                 {
-                                    Directory.CreateDirectory(plateImageFilepath);
+                                    if (currentTime - plate_candidates[i].firstfoundTime > Constants.CANDIDATE_REMOVE_TIME)
+                                    {
+                                        plate_candidates.RemoveAt(i);
+                                    }
                                 }
-                                File.WriteAllBytes(plateImageFilename, imageData);
-                                // write db
-                                db.InsertPlate(cameraID, datetime, plateStr, plateImageFilename); // db write 
-                                //db.InsertPlateText(camera.camID, DateTime.Now, plateStr, returnImage); // file write test
 
-                                // invoke anpr event to mainform
-                                if (ANPRDetected != null)
+                                // Check duplicate
+                                bool isNew = true;
+
+                                for (int i = 0; i < plate_candidates.Count; i++)
                                 {
-                                    ANPRDetected(cameraID, datetime, plateStr, plateImageFilename);
+                                    if (plateStr.Equals(plate_candidates[i].plate_string) ||
+                                     (plateStr.Substring(plateStr.Length - 4, 4).Equals(plate_candidates[i].plate_string.Substring(plate_candidates[i].plate_string.Length - 4, 4))))
+                                    {
+                                        isNew = false;
+
+                                        PLATE_CANDIDATE modified;
+                                        modified.firstfoundTime = plate_candidates[i].firstfoundTime;
+                                        modified.foundCount = plate_candidates[i].foundCount + 1;
+                                        modified.id = plate_candidates[i].id;
+                                        modified.plate_string = plate_candidates[i].plate_string;
+                                        plate_candidates.RemoveAt(i);
+                                        plate_candidates.Add(modified);
+
+                                        if (modified.foundCount == Constants.CANDIDATE_COUNT_FOR_PASS)
+                                        {
+                                            string plateImageFilepath = _savepath + "\\ch" + cameraID;
+                                            string dtStr = String.Format("{0:yyyyMMdd_HHmmss}", datetime);
+                                            string plateImageFilename = plateImageFilepath + "\\CAM-" + cameraID + "_" + dtStr + "_" + plateStr + ".jpg";
+                                            Console.WriteLine("Result: '{0}', ch {1}", plateStr, cameraID);
+
+                                            // write anpr snapshot
+                                            if (!Directory.Exists(plateImageFilepath))
+                                            {
+                                                Directory.CreateDirectory(plateImageFilepath);
+                                            }
+                                            File.WriteAllBytes(plateImageFilename, imageData);
+                                            // write db
+                                            db.InsertPlate(cameraID, datetime, plateStr, plateImageFilename); // db write 
+                                            //db.InsertPlateText(camera.camID, DateTime.Now, plateStr, returnImage); // file write test
+
+                                            // invoke anpr event to mainform
+                                            if (ANPRDetected != null)
+                                            {
+                                                ANPRDetected(cameraID, datetime, plateStr, plateImageFilename);
+                                            }
+                                        }
+                                    }
                                 }
+
+                                if (isNew)
+                                {
+                                    currentTime = Environment.TickCount;
+                                    PLATE_CANDIDATE newItem;
+                                    newItem.firstfoundTime = currentTime;
+                                    newItem.foundCount = 1;
+                                    newItem.plate_string = plateStr;
+                                    newItem.id = 0;
+
+                                    plate_candidates.Add(newItem);
+                                }
+
+                                
                             }
                             else
                             {

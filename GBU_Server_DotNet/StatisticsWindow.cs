@@ -15,6 +15,8 @@ namespace GBU_Server_Monitor
         private Database dbManager;
         private int _camCount = 0;
 
+        private List<DataTable> _resultTableList;
+
         public StatisticsWindow()
         {
             InitializeComponent();
@@ -31,6 +33,14 @@ namespace GBU_Server_Monitor
             listView_Result.Columns.Add("카메라", 150, HorizontalAlignment.Left);
             listView_Result.Columns.Add("통과대수", 60, HorizontalAlignment.Left);
 
+            listView_CarList.View = View.Details;
+            listView_CarList.FullRowSelect = true;
+            listView_CarList.GridLines = true;
+
+            listView_CarList.Columns.Add("카메라", 90, HorizontalAlignment.Left);
+            listView_CarList.Columns.Add("시간", 170, HorizontalAlignment.Left);
+            listView_CarList.Columns.Add("차량번호", 100, HorizontalAlignment.Left);
+
             _camCount = form._anprCamList.Count;
 
             comboBox_Channel.Items.Add("전체");
@@ -42,6 +52,8 @@ namespace GBU_Server_Monitor
             comboBox_Channel.SelectedIndex = 0;
 
             dbManager = form.dbManager;
+
+            _resultTableList = new List<DataTable>();
         }
 
         private void comboBox_Channel_SelectedIndexChanged(object sender, EventArgs e)
@@ -70,6 +82,8 @@ namespace GBU_Server_Monitor
 
             listView_Result.Items.Clear();
 
+            _resultTableList.Clear();
+
             // single channel search
             if (ch != 0)
             {
@@ -82,6 +96,7 @@ namespace GBU_Server_Monitor
                 string[] itemStr = { target, Convert.ToString(result.Rows.Count) };
                 ListViewItem item = new ListViewItem(itemStr);
                 listView_Result.Items.Add(item);
+                _resultTableList.Add(result);
             }
             // entire search
             else
@@ -97,6 +112,7 @@ namespace GBU_Server_Monitor
                     string[] itemStr = { target, Convert.ToString(result.Rows.Count) };
                     ListViewItem item = new ListViewItem(itemStr);
                     listView_Result.Items.Add(item);
+                    _resultTableList.Add(result);
                 }
             }
 
@@ -160,7 +176,20 @@ namespace GBU_Server_Monitor
 
         private void listView_Result_SelectedIndexChanged(object sender, EventArgs e)
         {
+            int index = listView_Result.FocusedItem.Index;
 
+            listView_CarList.Items.Clear();
+
+            if (_resultTableList[index] != null)
+            {
+                foreach (DataRow dr in _resultTableList[index].Rows)
+                {
+                    DateTime myDateTime = DateTime.ParseExact(dr["ANPRDATE"].ToString().Substring(0, 10) + " " + dr["ANPRTIME"].ToString(), "yyyy-MM-dd HH:mm:ss", System.Globalization.CultureInfo.InvariantCulture);
+                    string[] itemStr = { Convert.ToString(dr["CAMID"]), myDateTime.ToString(), Convert.ToString(dr["PLATE"]) };
+                    ListViewItem item = new ListViewItem(itemStr);
+                    listView_CarList.Items.Add(item);
+                }
+            }
         }
 
 
