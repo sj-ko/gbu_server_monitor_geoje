@@ -29,7 +29,6 @@
         private void InitializeComponent()
         {
             this.button_PlayStop = new System.Windows.Forms.Button();
-            this.button_Search = new System.Windows.Forms.Button();
             this.button_About = new System.Windows.Forms.Button();
             this.button_Exit = new System.Windows.Forms.Button();
             this.listView_result = new System.Windows.Forms.ListView();
@@ -60,6 +59,8 @@
             this.button_SaveGlobalSetting = new System.Windows.Forms.Button();
             this.button_Minimize = new System.Windows.Forms.Button();
             this.button_addFile = new System.Windows.Forms.Button();
+            this.label6 = new System.Windows.Forms.Label();
+            this.comboBox_manufacturer = new System.Windows.Forms.ComboBox();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox21)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox_result)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.pictureBox1)).BeginInit();
@@ -74,16 +75,6 @@
             this.button_PlayStop.Text = "연결";
             this.button_PlayStop.UseVisualStyleBackColor = true;
             this.button_PlayStop.Click += new System.EventHandler(this.button_PlayStop_Click);
-            // 
-            // button_Search
-            // 
-            this.button_Search.Location = new System.Drawing.Point(94, 12);
-            this.button_Search.Name = "button_Search";
-            this.button_Search.Size = new System.Drawing.Size(75, 36);
-            this.button_Search.TabIndex = 48;
-            this.button_Search.Text = "검색";
-            this.button_Search.UseVisualStyleBackColor = true;
-            this.button_Search.Click += new System.EventHandler(this.button_Search_Click);
             // 
             // button_About
             // 
@@ -174,7 +165,7 @@
             // 
             this.textBox_camID.Location = new System.Drawing.Point(123, 766);
             this.textBox_camID.Name = "textBox_camID";
-            this.textBox_camID.Size = new System.Drawing.Size(312, 21);
+            this.textBox_camID.Size = new System.Drawing.Size(80, 21);
             this.textBox_camID.TabIndex = 79;
             // 
             // textBox_name
@@ -287,11 +278,11 @@
             // 
             // button_Statictics
             // 
-            this.button_Statictics.Location = new System.Drawing.Point(400, 12);
+            this.button_Statictics.Location = new System.Drawing.Point(94, 12);
             this.button_Statictics.Name = "button_Statictics";
             this.button_Statictics.Size = new System.Drawing.Size(75, 36);
             this.button_Statictics.TabIndex = 97;
-            this.button_Statictics.Text = "통계";
+            this.button_Statictics.Text = "통계 / 검색";
             this.button_Statictics.UseVisualStyleBackColor = true;
             this.button_Statictics.Click += new System.EventHandler(this.button_Statictics_Click);
             // 
@@ -373,11 +364,31 @@
             this.button_addFile.UseVisualStyleBackColor = true;
             this.button_addFile.Click += new System.EventHandler(this.button_addFile_Click);
             // 
+            // label6
+            // 
+            this.label6.AutoSize = true;
+            this.label6.Location = new System.Drawing.Point(238, 769);
+            this.label6.Name = "label6";
+            this.label6.Size = new System.Drawing.Size(81, 12);
+            this.label6.TabIndex = 107;
+            this.label6.Text = "카메라 제조사";
+            // 
+            // comboBox_manufacturer
+            // 
+            this.comboBox_manufacturer.FormattingEnabled = true;
+            this.comboBox_manufacturer.Location = new System.Drawing.Point(325, 765);
+            this.comboBox_manufacturer.Name = "comboBox_manufacturer";
+            this.comboBox_manufacturer.Size = new System.Drawing.Size(110, 20);
+            this.comboBox_manufacturer.TabIndex = 108;
+            this.comboBox_manufacturer.SelectedIndexChanged += new System.EventHandler(this.comboBox_manufacturer_SelectedIndexChanged);
+            // 
             // MainForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(96F, 96F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Dpi;
             this.ClientSize = new System.Drawing.Size(1920, 1040);
+            this.Controls.Add(this.comboBox_manufacturer);
+            this.Controls.Add(this.label6);
             this.Controls.Add(this.button_addFile);
             this.Controls.Add(this.button_Minimize);
             this.Controls.Add(this.button_SaveGlobalSetting);
@@ -408,7 +419,6 @@
             this.Controls.Add(this.listView_result);
             this.Controls.Add(this.button_Exit);
             this.Controls.Add(this.button_About);
-            this.Controls.Add(this.button_Search);
             this.Controls.Add(this.button_PlayStop);
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.None;
             this.MaximizeBox = false;
@@ -428,7 +438,6 @@
         #endregion
 
         private System.Windows.Forms.Button button_PlayStop;
-        private System.Windows.Forms.Button button_Search;
         private System.Windows.Forms.Button button_About;
         private System.Windows.Forms.Button button_Exit;
         private System.Windows.Forms.PictureBox pictureBox21;
@@ -459,6 +468,8 @@
         private System.Windows.Forms.Button button_SaveGlobalSetting;
         private System.Windows.Forms.Button button_Minimize;
         private System.Windows.Forms.Button button_addFile;
+        private System.Windows.Forms.Label label6;
+        private System.Windows.Forms.ComboBox comboBox_manufacturer;
     }
 }
 

@@ -7,6 +7,8 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using System.IO;
+using System.Diagnostics;
 
 namespace GBU_Server_Monitor
 {
@@ -16,6 +18,21 @@ namespace GBU_Server_Monitor
         private int _camCount = 0;
 
         private List<DataTable> _resultTableList;
+
+        public struct PLATE_FOUND
+        {
+            public int id;
+            public int cam;
+            public DateTime dateTime;
+            public string plateStr;
+            public string imageFilePath;
+            //public Image snapshot;
+        };
+
+        private List<PLATE_FOUND> _plateList = new List<PLATE_FOUND>();
+        private int _plateListIdx = 0;
+
+        private string _selectedPlateImageLocation;
 
         public StatisticsWindow()
         {
@@ -54,6 +71,15 @@ namespace GBU_Server_Monitor
             dbManager = form.dbManager;
 
             _resultTableList = new List<DataTable>();
+
+            if (checkBox_searchAll.Checked)
+            {
+                textBox_search.Enabled = false;
+            }
+            else
+            {
+                textBox_search.Enabled = true;
+            }
         }
 
         private void comboBox_Channel_SelectedIndexChanged(object sender, EventArgs e)
@@ -77,6 +103,16 @@ namespace GBU_Server_Monitor
             DateTime endDate = dateTimePicker3.Value;
             DateTime endTime = dateTimePicker4.Value;
 
+            // check date range
+            DateTime startDT = startDate.Date + startTime.TimeOfDay;
+            DateTime endDT = endDate.Date + endTime.TimeOfDay;
+            if ((endDT - startDT).Ticks > new TimeSpan(30, 0, 0, 0).Ticks)
+            {
+                MessageBox.Show("검색 범위는 최대 30일 입니다.");
+                return;
+            }
+            // 
+
             DataTable result = new DataTable();
             int ch = comboBox_Channel.SelectedIndex;
 
@@ -91,7 +127,14 @@ namespace GBU_Server_Monitor
                 string[] targetArr = target.Split(' ');
                 int camid = Convert.ToInt32(targetArr[0], 10);
                 //dbManager.SearchPlateByDate(camid, targetDateTime, ref result);
-                dbManager.SearchPlateByRange(camid, startDate, startTime, endDate, endTime, ref result);
+                if (checkBox_searchAll.Checked)
+                {
+                    dbManager.SearchPlateByRange(camid, startDate, startTime, endDate, endTime, ref result);
+                }
+                else
+                {
+                    dbManager.SearchPlateByRange(camid, textBox_search.Text, startDate, startTime, endDate, endTime, ref result);
+                }
 
                 string[] itemStr = { target, Convert.ToString(result.Rows.Count) };
                 ListViewItem item = new ListViewItem(itemStr);
@@ -107,7 +150,14 @@ namespace GBU_Server_Monitor
                     string[] targetArr = target.Split(' ');
                     int camid = Convert.ToInt32(targetArr[0], 10);
                     //dbManager.SearchPlateByDate(camid, targetDateTime, ref result);
-                    dbManager.SearchPlateByRange(camid, startDate, startTime, endDate, endTime, ref result);
+                    if (checkBox_searchAll.Checked)
+                    {
+                        dbManager.SearchPlateByRange(camid, startDate, startTime, endDate, endTime, ref result);
+                    }
+                    else
+                    {
+                        dbManager.SearchPlateByRange(camid, textBox_search.Text, startDate, startTime, endDate, endTime, ref result);
+                    }
 
                     string[] itemStr = { target, Convert.ToString(result.Rows.Count) };
                     ListViewItem item = new ListViewItem(itemStr);
@@ -180,6 +230,9 @@ namespace GBU_Server_Monitor
 
             listView_CarList.Items.Clear();
 
+            _plateList.Clear();
+            _plateListIdx = 0;
+
             if (_resultTableList[index] != null)
             {
                 foreach (DataRow dr in _resultTableList[index].Rows)
@@ -188,7 +241,49 @@ namespace GBU_Server_Monitor
                     string[] itemStr = { Convert.ToString(dr["CAMID"]), myDateTime.ToString(), Convert.ToString(dr["PLATE"]) };
                     ListViewItem item = new ListViewItem(itemStr);
                     listView_CarList.Items.Add(item);
+
+                    PLATE_FOUND plate = new PLATE_FOUND();
+                    plate.cam = Convert.ToInt32(dr["CAMID"]);
+                    plate.dateTime = myDateTime;
+                    plate.id = _plateListIdx;
+                    plate.plateStr = Convert.ToString(dr["PLATE"]);
+                    plate.imageFilePath = Convert.ToString(dr["IMAGEPATH"]);
+
+                    _plateList.Add(plate);
+                    _plateListIdx++;
                 }
+            }
+        }
+
+        private void listView_CarList_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            int index = listView_CarList.FocusedItem.Index;
+            _selectedPlateImageLocation = _plateList[index].imageFilePath;
+        }
+
+        private void listView_CarList_MouseDoubleClick(object sender, MouseEventArgs e)
+        {
+            if (listView_CarList.SelectedItems.Count == 1)
+            {
+                //MessageBox.Show(_selectedPlateImageLocation);
+                ProcessStartInfo _processStartInfo = new ProcessStartInfo();
+                _processStartInfo.WorkingDirectory = @"%SystemRoot%\System32\";
+                _processStartInfo.FileName = @"rundll32.exe";
+                _processStartInfo.Arguments = "\"" + @"C:\Program Files\Windows Photo Viewer\PhotoViewer.dll" + "\"" + ", ImageView_Fullscreen " + Path.GetFullPath(_selectedPlateImageLocation);
+                _processStartInfo.CreateNoWindow = false;
+                Process myProcess = Process.Start(_processStartInfo);
+            }
+        }
+
+        private void checkBox_searchAll_CheckedChanged(object sender, EventArgs e)
+        {
+            if (checkBox_searchAll.Checked)
+            {
+                textBox_search.Enabled = false;
+            }
+            else
+            {
+                textBox_search.Enabled = true;
             }
         }
 

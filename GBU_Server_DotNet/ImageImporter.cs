@@ -209,7 +209,7 @@ namespace GBU_Server_Monitor
         private void MediaThreadFunction()
         {
             WebClient webClient = new WebClient();
-            //webClient.OpenReadCompleted += new OpenReadCompletedEventHandler(imageDownload_openReadCompleted);
+            webClient.DownloadDataCompleted += new DownloadDataCompletedEventHandler(imageDownload_openReadCompleted);
             webClient.Credentials = new NetworkCredential(camUsername, camPassword); // to do : change to SecureString
             //webClient.OpenRead(camUrl);
 
@@ -219,8 +219,12 @@ namespace GBU_Server_Monitor
 
                 try
                 {
-                    byte[] imageData = webClient.DownloadData(camUrl); // get jpeg byte from http
-                    imageList.Enqueue(imageData);
+                    //byte[] imageData = webClient.DownloadData(camUrl); // get jpeg byte from http
+                    //imageList.Enqueue(imageData);
+                    if (!webClient.IsBusy)
+                    {
+                        webClient.DownloadDataAsync(camUrl);
+                    }
                 }
                 catch (Exception e)
                 {
@@ -408,14 +412,10 @@ namespace GBU_Server_Monitor
             }
         }
 
-        private void imageDownload_openReadCompleted(object sender, OpenReadCompletedEventArgs e)
+        private void imageDownload_openReadCompleted(object sender, DownloadDataCompletedEventArgs e)
         {
-            Stream s = e.Result;
-            //
-            byte[] imageData = ReadFully(s); // get jpeg byte from http
+            byte[] imageData = e.Result; // get jpeg byte from http
             imageList.Enqueue(imageData);
-
-            s.Close();
         }
 
         public static byte[] ReadFully(Stream input)

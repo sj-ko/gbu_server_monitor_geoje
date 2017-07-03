@@ -72,6 +72,9 @@ namespace GBU_Server_Monitor
             public GMapOverlay markersOverlay;
             public long recognizedTime { get; set; }
             public PointLatLng position { get; set; }
+
+            // add cam manufacturer
+            public Constants.MANUFACTURER manufacturer;
         };
 
         struct Route
@@ -135,6 +138,12 @@ namespace GBU_Server_Monitor
             listView_result.Columns.Add("카메라", 50, HorizontalAlignment.Left);
             listView_result.Columns.Add("시간", 200, HorizontalAlignment.Left);
             listView_result.Columns.Add("차량번호", 100, HorizontalAlignment.Left);
+
+            comboBox_manufacturer.Items.Add("기타");
+            comboBox_manufacturer.Items.Add("AXIS");
+            comboBox_manufacturer.Items.Add("HIKVISION");
+            comboBox_manufacturer.Items.Add("한화테크윈");
+            comboBox_manufacturer.Items.Add("HONEYWELL");
 
             InitSetting();
 
@@ -369,7 +378,32 @@ namespace GBU_Server_Monitor
                     imageImporter[i].ANPRDetected += MainForm_ANPRDetected;
                     imageImporter[i].ANPRStatus += MainForm_ANPRStatus;
                     imageImporter[i].SavePath = setting.savePath;
-                    imageImporter[i].InitCamera(_anprCamList[i].camid, _anprCamList[i].address, setting.importInterval, _anprCamList[i].username, _anprCamList[i].password, setting.anprTimeout);
+
+                    // adjust address by manufacturer
+                    string address = _anprCamList[i].address;
+
+                    switch (_anprCamList[i].manufacturer)
+                    {
+                        case Constants.MANUFACTURER.AXIS:
+                            address = "http://" + _anprCamList[i].address + "/jpg/image.jpg";
+                            break;
+                        case Constants.MANUFACTURER.HIKVISION:
+                            address = "http://" + _anprCamList[i].address + "/Streaming/channels/1/picture";
+                            break;
+                        case Constants.MANUFACTURER.HANWHA_TECHWIN:
+                            address = "http://" + _anprCamList[i].address + "/cgi-bin/video.cgi?msubmenu=jpg";
+                            break;
+                        case Constants.MANUFACTURER.HONEYWELL:
+                            address = "http://" + _anprCamList[i].address + "/cgi-bin/webra_fcgi.fcgi?api=get_jpeg_raw&chno=1";
+                            break;
+
+                        case (int)Constants.MANUFACTURER.UNKNOWN:
+                        default:
+                            break;
+                    }
+                    //
+
+                    imageImporter[i].InitCamera(_anprCamList[i].camid, address, setting.importInterval, _anprCamList[i].username, _anprCamList[i].password, setting.anprTimeout);
                     imageImporter[i].Play();
                 }
                 else
@@ -574,6 +608,7 @@ namespace GBU_Server_Monitor
                     existCam.address = textBox_address.Text;
                     existCam.username = textBox_camUsername.Text;
                     existCam.password = textBox_camPassword.Text;
+                    existCam.manufacturer = (Constants.MANUFACTURER)comboBox_manufacturer.SelectedIndex;
                     return;
                 }
             }
@@ -587,6 +622,7 @@ namespace GBU_Server_Monitor
             newcam.address = textBox_address.Text;
             newcam.username = textBox_camUsername.Text;
             newcam.password = textBox_camPassword.Text;
+            newcam.manufacturer = (Constants.MANUFACTURER)comboBox_manufacturer.SelectedIndex;
             newcam.node = camNode;
             newcam.markersOverlay = new GMapOverlay("markers");
             gMapControl1.Overlays.Add(newcam.markersOverlay);
@@ -650,6 +686,7 @@ namespace GBU_Server_Monitor
             textBox_address.Text = targetCam.address;
             textBox_camUsername.Text = targetCam.username;
             textBox_camPassword.Text = targetCam.password;
+            comboBox_manufacturer.SelectedIndex = (int)targetCam.manufacturer;
             //
         }
 
@@ -826,7 +863,7 @@ namespace GBU_Server_Monitor
         {
             OpenFileDialog fileDialog = new OpenFileDialog();
 
-            fileDialog.Filter = "AVI|*.avi|MP4|*.mp4";
+            fileDialog.Filter = "AVI|*.avi|MP4|*.mp4|*.MOV|*.mov";
             fileDialog.Title = "설정 파일 열기";
 
             if (fileDialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
@@ -847,6 +884,30 @@ namespace GBU_Server_Monitor
                 _processStartInfo.CreateNoWindow = false;
                 Process myProcess = Process.Start(_processStartInfo);
             }
+        }
+
+        private void comboBox_manufacturer_SelectedIndexChanged(object sender, EventArgs e)
+        {
+            switch (comboBox_manufacturer.SelectedIndex)
+            {
+                case (int)Constants.MANUFACTURER.AXIS:
+                    
+                    break;
+                case (int)Constants.MANUFACTURER.HIKVISION:
+
+                    break;
+                case (int)Constants.MANUFACTURER.HANWHA_TECHWIN:
+
+                    break;
+                case (int)Constants.MANUFACTURER.HONEYWELL:
+
+                    break;
+                case (int)Constants.MANUFACTURER.UNKNOWN:
+
+                default:
+                    break;
+            }
+            
         }
     }
 }

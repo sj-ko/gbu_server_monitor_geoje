@@ -36,6 +36,10 @@ namespace GBU_Server_Monitor
 #endif
 
 #if __USE_FIREBIRD__
+        // strconn User=sysdba;Password=masterkey;Database=d:/anprdb/gbuanpr_geoje.fdb;Server=127.0.0.1;Port=3050;
+        private string strConn1 = "User=sysdba;Password=masterkey;Database=d:/anprdb/";
+        private string strConn2 = ";Server=127.0.0.1;Port=3050;";
+
         private string strConn = ConfigurationManager.ConnectionStrings["strConn"].ConnectionString;
         private FbConnection conn;
 #else
@@ -46,7 +50,7 @@ namespace GBU_Server_Monitor
         public Database()
         {
 #if __USE_FIREBIRD__
-            conn = new FbConnection(strConn);
+            //conn = new FbConnection(strConn);
 #else
             conn = new MySqlConnection(strConn);
 #endif
@@ -56,6 +60,7 @@ namespace GBU_Server_Monitor
         {
             try
             {
+                conn = new FbConnection(strConn1 + GetCurrentDBFileName() + strConn2);
                 conn.Open();
 #if __USE_FIREBIRD__
                 //string fbYMDHNS = string.Format("{0:yyMMddHHmmss}", datetime); // xxx
@@ -133,6 +138,7 @@ namespace GBU_Server_Monitor
         {
             try
             {
+                conn = new FbConnection(strConn1 + GetCurrentDBFileName() + strConn2);
                 conn.Open();
                 DataSet ds = new DataSet();
 #if __USE_FIREBIRD__
@@ -166,10 +172,12 @@ namespace GBU_Server_Monitor
         {
             try
             {
+                string searchDate = string.Format("{0:yyyy/MM/dd}", dateTime); // ANPRDATE
+                string fileDate = string.Format("{0:yyyyMMdd}", dateTime);
+
+                conn = new FbConnection(strConn1 + "GBUANPR_GEOJE_" + fileDate + ".FDB" + strConn2);
                 conn.Open();
                 DataSet ds = new DataSet();
-
-                string searchDate = string.Format("{0:yyyy/MM/dd}", dateTime); // ANPRDATE
 
 #if __USE_FIREBIRD__
                 FbDataAdapter da = new FbDataAdapter("SELECT * FROM ANPRTABLE WHERE ANPRDATE like '" + searchDate + "' and CAMID like " + ch, conn);
@@ -203,13 +211,63 @@ namespace GBU_Server_Monitor
         {
             try
             {
-                conn.Open();
-                DataSet ds = new DataSet();
-
                 string searchStartDate = string.Format("{0:yyyy/MM/dd}", startDate); // ANPRDATE
                 string searchStartTime = string.Format("{0:HH:mm:ss}", startTime); // ANPRTIME
                 string searchEndDate = string.Format("{0:yyyy/MM/dd}", endDate); // ANPRDATE
                 string searchEndTime = string.Format("{0:HH:mm:ss}", endTime); // ANPRTIME
+
+                DataTable table = new DataTable();
+
+                foreach (DateTime day in EachDay(startDate, endDate))
+                {
+                    string fileDate = string.Format("{0:yyyyMMdd}", day);
+
+                    if (!File.Exists("d:/anprdb/GBUANPR_GEOJE_" + fileDate + ".fdb"))
+                    {
+                        continue;
+                    }
+
+                    conn = new FbConnection(strConn1 + "GBUANPR_GEOJE_" + fileDate + ".FDB" + strConn2);
+                    conn.Open();
+                    DataSet ds = new DataSet();
+
+                    Console.WriteLine(searchStartDate + " " + searchStartTime + " " + searchEndDate + " " + searchEndTime);
+                    string searchDate = string.Format("{0:yyyy/MM/dd}", day); // ANPRDATE
+
+#if __USE_FIREBIRD__
+                    FbDataAdapter da;
+                    if (day.Date == startDate.Date || day.Date == endDate.Date)
+                    {
+                        da = new FbDataAdapter
+                        ("select * from anprtable where cast(anprdate as date) + cast(anprtime as time) >= '" + searchStartDate + " " + searchStartTime +
+                        "' and cast(anprdate as date) + cast(anprtime as time) <= '" + searchEndDate + " " + searchEndTime + "' and camid like " + ch, conn);
+                    }
+                    else
+                    {
+                        da = new FbDataAdapter("SELECT * FROM ANPRTABLE WHERE CAMID like " + ch + " and anprdate like '" + searchDate + "'", conn);
+                    }
+#else
+                MySqlDataAdapter da = new MySqlDataAdapter("SELECT * FROM anpr_test1 WHERE plate like '%" + str + "%'", conn);
+#endif
+                    da.Fill(ds, "mytable");
+
+                    DataTable dt = ds.Tables["mytable"];
+                    foreach (DataRow dr in dt.Rows)
+                    {
+#if __USE_FIREBIRD__
+                        Console.WriteLine(string.Format("Name = {0}, Desc = {1}", dr["ANPRTIME"], dr["PLATE"]));
+#else
+                    Console.WriteLine(string.Format("Name = {0}, Desc = {1}", dr["dateTime"], dr["plate"]));
+#endif
+                    }
+                    table.Merge(dt);
+                    conn.Close();
+                }
+
+                resultTable = table;
+                /*
+                conn.Open();
+                DataSet ds = new DataSet();
 
                 Console.WriteLine(searchStartDate + " " + searchStartTime + " " + searchEndDate + " " + searchEndTime);
 
@@ -233,6 +291,7 @@ namespace GBU_Server_Monitor
                 }
                 resultTable = dt;
                 conn.Close();
+                 */ 
             }
             catch (Exception e)
             {
@@ -241,6 +300,122 @@ namespace GBU_Server_Monitor
             }
 
             return 0;
+        }
+
+        public int SearchPlateByRange(int ch, string str, DateTime startDate, DateTime startTime, DateTime endDate, DateTime endTime, ref DataTable resultTable)
+        {
+            try
+            {
+                string searchStartDate = string.Format("{0:yyyy/MM/dd}", startDate); // ANPRDATE
+                string searchStartTime = string.Format("{0:HH:mm:ss}", startTime); // ANPRTIME
+                string searchEndDate = string.Format("{0:yyyy/MM/dd}", endDate); // ANPRDATE
+                string searchEndTime = string.Format("{0:HH:mm:ss}", endTime); // ANPRTIME
+
+                DataTable table = new DataTable();
+
+                foreach (DateTime day in EachDay(startDate, endDate))
+                {
+                    string fileDate = string.Format("{0:yyyyMMdd}", day);
+
+                    if (!File.Exists("d:/anprdb/GBUANPR_GEOJE_" + fileDate + ".fdb"))
+                    {
+                        continue;
+                    }
+
+                    conn = new FbConnection(strConn1 + "GBUANPR_GEOJE_" + fileDate + ".FDB" + strConn2);
+                    conn.Open();
+                    DataSet ds = new DataSet();
+
+                    Console.WriteLine(searchStartDate + " " + searchStartTime + " " + searchEndDate + " " + searchEndTime);
+                    string searchDate = string.Format("{0:yyyy/MM/dd}", day); // ANPRDATE
+
+#if __USE_FIREBIRD__
+                    FbDataAdapter da;
+                    if (day.Date == startDate.Date || day.Date == endDate.Date)
+                    {
+                        da = new FbDataAdapter
+                        ("select * from anprtable where cast(anprdate as date) + cast(anprtime as time) >= '" + searchStartDate + " " + searchStartTime +
+                        "' and cast(anprdate as date) + cast(anprtime as time) <= '" + searchEndDate + " " + searchEndTime + "' and camid like " + ch + " and PLATE like '%" + str + "%'", conn);
+                    }
+                    else
+                    {
+                        da = new FbDataAdapter("SELECT * FROM ANPRTABLE WHERE CAMID like " + ch + " and PLATE like '%" + str + "%'" + " and anprdate like '" + searchDate + "'", conn);
+                    }
+#else
+                MySqlDataAdapter da = new MySqlDataAdapter("SELECT * FROM anpr_test1 WHERE plate like '%" + str + "%'", conn);
+#endif
+                    da.Fill(ds, "mytable");
+
+                    DataTable dt = ds.Tables["mytable"];
+                    foreach (DataRow dr in dt.Rows)
+                    {
+#if __USE_FIREBIRD__
+                        Console.WriteLine(string.Format("Name = {0}, Desc = {1}", dr["ANPRTIME"], dr["PLATE"]));
+#else
+                    Console.WriteLine(string.Format("Name = {0}, Desc = {1}", dr["dateTime"], dr["plate"]));
+#endif
+                    }
+                    table.Merge(dt);
+                    conn.Close();
+                }
+
+                resultTable = table;
+
+                /*
+                conn.Open();
+                DataSet ds = new DataSet();
+
+                Console.WriteLine(searchStartDate + " " + searchStartTime + " " + searchEndDate + " " + searchEndTime);
+
+#if __USE_FIREBIRD__
+                FbDataAdapter da = new FbDataAdapter
+                    ("select * from anprtable where cast(anprdate as date) + cast(anprtime as time) >= '" + searchStartDate + " " + searchStartTime +
+                    "' and cast(anprdate as date) + cast(anprtime as time) <= '" + searchEndDate + " " + searchEndTime + "' and camid like " + ch + " and PLATE like '%" + str + "%'", conn);
+#else
+                MySqlDataAdapter da = new MySqlDataAdapter("SELECT * FROM anpr_test1 WHERE plate like '%" + str + "%'", conn);
+#endif
+                da.Fill(ds, "mytable");
+
+                DataTable dt = ds.Tables["mytable"];
+                foreach (DataRow dr in dt.Rows)
+                {
+#if __USE_FIREBIRD__
+                    Console.WriteLine(string.Format("Name = {0}, Desc = {1}", dr["ANPRTIME"], dr["PLATE"]));
+#else
+                    Console.WriteLine(string.Format("Name = {0}, Desc = {1}", dr["dateTime"], dr["plate"]));
+#endif
+                }
+                resultTable = dt;
+                conn.Close();
+                 */ 
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e.ToString() + "::" + e.StackTrace);
+                conn.Close();
+            }
+
+            return 0;
+        }
+
+        private string GetCurrentDBFileName()
+        {
+            DateTime date = DateTime.Now;
+            string dtStr = String.Format("{0:yyyyMMdd}", date);
+            string filename = "GBUANPR_GEOJE_" + dtStr + ".FDB"; // today
+
+            if (!File.Exists("d:/anprdb/" + filename))
+            {
+                File.Copy("d:/anprdb/GBUANPR_GEOJE_ORIGIN2.FDB", "d:/anprdb/" + filename);
+            }
+
+            return filename;
+        }
+
+        private IEnumerable<DateTime> EachDay(DateTime from, DateTime thru)
+        {
+            for (var day = from.Date; day.Date <= thru.Date; day = day.AddDays(1))
+                yield return day;
         }
 
 #if false

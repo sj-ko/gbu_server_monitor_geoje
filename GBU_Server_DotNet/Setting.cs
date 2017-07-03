@@ -18,6 +18,9 @@ namespace GBU_Server_Monitor
         private int _mode;
         private string _serverAddr;
 
+        // added camera manufacturer
+        private Constants.MANUFACTURER _manufacturer;
+
         public string savePath
         {
             get
@@ -99,6 +102,23 @@ namespace GBU_Server_Monitor
             }
         }
 
+
+        public Constants.MANUFACTURER manufacturer
+        {
+            get
+            {
+                return _manufacturer;
+            }
+            set
+            {
+                if (value != _manufacturer)
+                {
+                    _manufacturer = value;
+                    NotifyPropertyChanged("manufacturer");
+                }
+            }
+        }
+
         public event PropertyChangedEventHandler PropertyChanged;
 
         // This method is called by the Set accessor of each property.
@@ -120,6 +140,7 @@ namespace GBU_Server_Monitor
             // added server-client mode
             _mode = 0;
             _serverAddr = "127.0.0.1";
+            _manufacturer = Constants.MANUFACTURER.UNKNOWN;
         }
 
         public Setting(SerializationInfo info, StreamingContext context)
@@ -130,6 +151,7 @@ namespace GBU_Server_Monitor
             // added server-client mode
             _mode = 0;
             _serverAddr = "127.0.0.1";
+            _manufacturer = Constants.MANUFACTURER.UNKNOWN;
         }
 
         public void GetObjectData(SerializationInfo info, StreamingContext context)
@@ -140,6 +162,7 @@ namespace GBU_Server_Monitor
             // added server-client mode
             info.AddValue("mode", this._mode);
             info.AddValue("serverAddr", this._serverAddr);
+            _manufacturer = Constants.MANUFACTURER.UNKNOWN;
         }
 
     }
